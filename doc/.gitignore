@@ -1,0 +1,6 @@
+public/
+deploy
+.DS_Store
+.hugo_build.lock
+themes/hugo-book
+resources/

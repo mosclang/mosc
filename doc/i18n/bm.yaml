@@ -1,0 +1,14 @@
+- id: Search
+  translation: A gnini
+
+- id: Edit this page
+  translation: Nin Gafe yorodo falen
+
+- id: Last modified by
+  translation: Yelema laban kera
+
+- id: Expand
+  translation: Développer
+
+- id: bookSearchConfig
+  translation: '{ cache: true }'
