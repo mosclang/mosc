@@ -1,0 +1,35 @@
+kabo "kunfe" nani Kunfeko;
+
+nin rand = Kunfeko.kura()
+
+tii test(v1, doni) { # extend test function on Diat class
+   segin niin v1 == doni # `ale` refers to `this` object
+}
+nin value =  rand.float() * 24 # let value = Math.random() * 20
+A.yira("Value = ${value}")
+# Below (switch or when) case on the varibale 'value'
+nin a = tumamin(value) {
+    18 + 3 => { # call a function to test, if true then matches the branch
+        A.yira("Katian ni 19 ye")
+        20
+    }
+    ye Seben => 100  # check instance of value is String, if true then matches the branch
+    ye Walan => 200 # check instance of value is Array, if true then matches the branch
+    > 16 + 1 => { # check value is greater than 17, if true then matches the branch
+        A.yira("Katian ni 16 ye")
+        40
+    }
+    < (8 + 2) => {
+        A.yira("Katian ni 8 ye")
+        50
+    }
+    note => { # default branch
+        A.yira("Galon finnnn")
+        12
+    }
+}
+A.yira(a)
+
+
+
+

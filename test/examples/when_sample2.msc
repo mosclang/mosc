@@ -1,0 +1,27 @@
+nin MAP = {"vv": "molo"}
+nin OUT = {}
+kulu JWrapper {
+    dialen report_(key, value) {
+        OUT[key] = value;
+    }
+    dialen report(map) {
+       seginka (map kono entry) {
+           JWrapper.report(entry.key, entry.value.sebenma)
+       }
+     }
+    dialen report(key, value) {
+        nin valueStr = tumamin(value) {
+            ye Wala => "{wala}"
+            ye Walan => "[walan]"
+            note => "STR"
+       }
+       A.yira(valueStr)
+       JWrapper.report_(key, valueStr)
+    }
+}
+
+
+JWrapper.report("str", "String")
+JWrapper.report("arr", [1, 2, 3])
+JWrapper.report("map", MAP)
+A.yira(OUT)

@@ -1,0 +1,5 @@
+seginka 1..10 kono a kaj niin 2 A.yira("$a")
+seginka 0...-10 kono a kaj niin 11 A.yira("$a")
+nin a = "26"
+A.yira("$a.mm")
+A.yira("$a")

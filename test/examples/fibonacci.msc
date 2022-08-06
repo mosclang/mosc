@@ -1,0 +1,6 @@
+tii fib(n) {
+    nii n < 2 segin niin n;
+    segin niin fib(n - 2) + fib(n - 1);
+}
+A.yira(fib(40))
+A.yira(A.waati())

@@ -1,0 +1,24 @@
+# an error is an enumeration with detail
+# proposition for error handling
+# a.molo # will be handled by semantic analyser must be handled outside of the code
+nin a = "23"
+# a.toNumber() # will throw an Error with message "Fiili: Baara don bali 'toNumber' weleli a kan"
+kulu SoroBali(nin msg: Seben = "A ma soror")
+kulu Djanya
+akee {
+    afili SoroBali kura()
+    a.toNumber()
+} namason bawo SoroBali(value) {
+      A.yira('Amason')
+      nin s=0
+      seginka a=0 foo 1000009 kay niin 2 ye { # for a = 0; a<10; a+=2
+           # A.yira("A $a")
+           s= s + a;
+      }
+      A.yira("Some::: $s")
+ } namason bawo Djanya(value) {
+      A.yira(value)
+ } namason(e) {
+    A.yira(e)
+}
+A.yira("Molo sonna")

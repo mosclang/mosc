@@ -1,0 +1,7 @@
+nin a = 0xA
+nin c = 0b10
+nin d = 0O20
+A.yira([a, c, d]);
+nin e = (a >> 2) + (c << 3) + (d & 0b11);
+A.yira([a, c, d, e]);
+A.yira(105>>1)

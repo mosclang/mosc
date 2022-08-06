@@ -1,0 +1,17 @@
+baara function(a: Diat, fn: (e: Diat) -> Abee) {
+    fn(a * 2)
+}
+
+#function(20, (a) -> {
+#    A.yira(20 + a)
+#})
+
+function(20) { a ->
+     A.yira("A: " + a)
+}
+
+
+
+["4", '3', 5, 7, 8, 9].kelenkelen { e ->
+    A.yira("4" + e)
+}

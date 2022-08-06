@@ -1,0 +1,12 @@
+baara farakanni(a: Diat, b: Diat) {
+    A.yira("farakanni")
+    seginni a + b
+}
+baara yira(str) {
+    A.yira(str)
+}
+boni {farakanni, yira}
+
+boni kulu Mogo(nin togo: Seben, nin diamou: Seben) {
+}
+

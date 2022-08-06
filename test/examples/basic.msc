@@ -1,0 +1,49 @@
+nin a = 12;
+nin b = 20;
+nin c = a + b;
+tii testing(p) {
+    segin niin testm(p);
+}
+
+tii kk(fn) {
+    seginka 1...4 kono ar fn.weele(ar);
+}
+ tii kunBen() {
+    A.yira("Here");
+    segin niin kunBen1("");
+  }
+
+  tii kunBen1(sep) {
+
+    nin first = tien
+    nin result = ""
+    seginka ["mmm", " pppmo", ...["Molo", ...["Molo2", a]]] kono element {
+      nii (!first) result = result + sep
+      first = galon
+      A.yira(element);
+      result = result + element.sebenma
+    }
+
+    segin niin result
+  }
+
+tii testm(a) {
+    segin niin "molllp";
+}
+nin tab = ["mmm", " pppmo", ...["Molo", ...["Molo2", a]]]
+nin r = tab.kunBen()
+
+A.yira(r);
+
+kk() {(a)=>
+    A.yira("El: $a");
+}
+
+
+
+nin map = {"molo": "molob", "t": "Test", 2: "Ppm", -3: 4, [a]: "val a", a, ...{"b": "BB", c}};
+
+seginka map kono m kay niin 1 {
+    A.yira(m)
+}
+A.yira(map);

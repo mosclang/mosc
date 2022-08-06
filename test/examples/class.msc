@@ -1,0 +1,52 @@
+kulu Mogo {
+    nin suku
+    nin togo
+    togoGet {
+        segin niin ale.togo;
+    }
+    dilan kura(suku, togo, diamou) {
+        ale.togo = togo;
+        ale.suku = suku;
+        #A.yira(ale.togoGet);
+    }
+
+    kuma() {
+        A.yira("Mogo be Kuma ye")
+    }
+    diamou() {
+        # ale.togo;#.atii(" ")[1]
+        nin all = ale;
+        segin niin all.togoGet;
+    }
+
+
+}
+
+kulu Farafin ye Mogo {
+    nin diamana = "Africa";
+    dilan kura(suku, togo, diamou) {
+        faa(suku, togo, diamou);
+        # ale.togo = diamou;
+        # ale.diamana = diamou;
+    }
+
+    kuma() {
+        faa.kuma(); # super.kuma()
+        A.yira(ale.suku + " be Kuma ye")
+    }
+
+}
+
+#Farafin.test() {
+#    A.yira("Extension test ${ale.suku)"");
+#}
+
+
+nin mogo = Mogo.kura("Mogo", "Madou", "DOUMBIA")
+nin far = Farafin.kura("Farafin", "Madou", "DIARRA")
+A.yira(mogo.togoGet);
+A.yira(far.togoGet);
+#A.yira(far.diamou())
+#mogo.kuma()
+far.kuma()
+#far.test()

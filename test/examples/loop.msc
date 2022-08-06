@@ -1,0 +1,27 @@
+nin a = 0;
+nin mali = ["molo", "Madou", "Ali"]
+#A.yira(mali)
+# ForOfStement
+seginka mali kono k { # for(a: mali); for(let a of mali); for (let a in mali)
+     A.yira(k)
+}
+# ForOfStatement
+#seginka a mali kono { # for(a: mali); for(let a of mali); for (let a in mali)
+#    A.yira(a)
+#}
+# ForLoopStatement with step
+#seginka a=0 foo 10 kay niin 2 ye { # for a = 0; a<10; a+=2
+#     A.yira("A $a")
+#}
+# WhileLoopStatement
+a = 3000000
+nin s = 0;
+A.yira(a)
+foo a > 0 {# while loop
+     a = a - 1;
+     s = s + a;
+     # A.yira("a: ${a}")
+     # A.yira(a);
+     # A.yira("AF $a")
+}
+A.yira("Somme: ${s}");

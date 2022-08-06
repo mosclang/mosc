@@ -1,0 +1,45 @@
+
+
+
+kulu Walan2(nin a: Diat = 12,
+           nin b: Seben = 100) {
+
+    nin sen: Seben;
+
+    dilan { #init
+    A.yira("Walan2 kura");
+    }
+    baara kann(e: Diat): Diat {
+        seginni e + ale.a + ale.b
+    }
+    dialen baara mmm(i: Walan2) {
+        seginni i.kann(30);
+    }
+}
+
+baara Walan.kelenkelen() {
+    A.yira("Kelenkelen ${ale.dianya}")
+}
+baara Walan.agnini(): Abee {
+A.yira("Agini")
+}
+
+baara Seben.atike() {
+    nin r = ale.dianya
+    nin ret = ""
+    foo r > 0 {
+        r--
+        ret= ret + ale[r]
+    }
+    seginni ret
+}
+
+nin walan = Walan2 kura()
+A.yira(walan.a + walan.b)
+A.yira(walan.kann(20))
+A.yira("mmm: ${Walan2.mmm(walan)}")
+nin arr = ["12", "2"]
+arr.kelenkelen()
+A.yira("Arr folo ye ${arr.folo()}")
+A.yira("Molobala".atike())
+A.yira("Molobala".atike())

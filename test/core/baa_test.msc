@@ -1,0 +1,10 @@
+tii tikiya(expr, msg) {
+    nii expr segin niin tien
+    Djuru.tike(msg)
+}
+
+tikiya(Baa.sukuKelen("molo", "molo"), "Kaganka kè kelen ye")
+tikiya(!Baa.sukuKelen("molo", "mmo"), "Maganka kè kelen ye")
+tikiya(!Baa.sukuKelen("molo", 23), "Maganka kè kelen ye")
+tikiya(Baa.sukuKelen(23, 23), "Kaganka kè kelen ye")
+

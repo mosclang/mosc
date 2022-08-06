@@ -1,0 +1,11 @@
+nin fichier = A.gafe.kalanta("test.txt") # readable stream
+A.yira(fichier.kalan())
+fichier = A.gafe.sebenta("test.txt", {append: tien})
+fichier.seben("Hello Ali, how are you doing?")
+fichier = A.gafe.kalanta("test.txt")
+A.yira(fichier.kalan())
+
+baara autorelease(stream: Abee, action: () -> Abee) {
+    action();
+    stream.datugu();
+}

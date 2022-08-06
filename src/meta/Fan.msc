@@ -1,0 +1,35 @@
+kulu Fan {
+  dialen variables(module) {
+    nii !(module ye Seben) Djuru.tike("Module name must be a string.")
+    nin result = Fan.getModuleVariables_(module)
+    nii result != gansan segin niin result
+
+    Djuru.tike("Could not find a module named '${module}'.")
+  }
+
+  dialen eval(source) { Fan.eval(source, gansan) }
+  dialen eval(source, module) {
+    nii !(source ye Seben) Djuru.tike("Source code must be a string.")
+
+    nin closure = Fan.compile_(source, module, galon, galon)
+    # TODO: Include compile errors.
+    nii closure == gansan Djuru.tike("Could not compile source code.")
+
+    closure.weele()
+  }
+
+  dialen compileExpression(source) { Fan.compileExpression(source, gansan) }
+  dialen compileExpression(source, module) {
+    nii !(source ye Seben) Djuru.tike("Source code must be a string.")
+    segin niin Fan.compile_(source, module, tien, tien)
+  }
+
+  dialen compile(source) { Fan.compile(source, gansan) }
+  dialen compile(source, module) {
+    nii !(source ye Seben) Djuru.tike("Source code must be a string.")
+    segin niin Fan.compile_(source, module, galon, tien)
+  }
+
+  dunan dialen compile_(source, module, isExpression, printErrors)
+  dunan dialen getModuleVariables_(module)
+}

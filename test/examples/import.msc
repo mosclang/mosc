@@ -1,0 +1,37 @@
+# nani {farakanni, Mogo} ye kaboo '/examples/lib.msc'
+kabo "fan" nani Fan;
+kabo "kunfe" nani Kunfeko;
+
+A.yira(Fan.eval("segin niin 12 + 3"))
+nin rand = Kunfeko.kura()
+A.yira(rand.float());
+A.yira(rand.int());
+nin buffered = "12smoldopppam"
+A.yira(buffered[1..2])
+
+tii test(input) {
+    nin isStatement = tien;
+
+    nin closure = nii (isStatement) {
+           Fan.compile(input)
+    } note {
+       Fan.compileExpression(input)
+    }
+    A.yira(closure);
+
+    # Stop if there was a compile error.
+    nii closure == gansan segin;
+
+    nin fiber = Djuru.kura(closure)
+
+    nin result = fiber.aladie()
+    nii (fiber.fili != gansan) {
+      # TODO: Include callstack.
+      A.yira("Runtime error: ${fiber.fili}");
+    }
+    A.yira("res:: $result");
+
+}
+test("segin niin 23 + 4;");
+
+

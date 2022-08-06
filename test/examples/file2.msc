@@ -1,0 +1,3 @@
+nin fichier = Gafe kura('test.txt')
+A.yira(fichier)
+A.yira(fichier.kalan())

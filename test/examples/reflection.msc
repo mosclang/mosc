@@ -1,0 +1,10 @@
+A.yira(Fen.sukuya({}))
+nin d = 12
+nin togo = d
+nii (togo sukuye Seben) { # x ye _ ye
+    A.yira("Seben do")
+
+} note {
+    A.yira("Togo ye ${Fen.sukuya(togo)} ye");
+    A.ppp(("".molo()));
+}

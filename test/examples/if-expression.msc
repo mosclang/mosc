@@ -1,0 +1,9 @@
+nin a = 10
+nin b = 0;
+nin c = nii a > 20 {
+    a
+} note {
+    nin tmp = 2
+    b = a * tmp
+}
+A.yira(c)

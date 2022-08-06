@@ -1,0 +1,6 @@
+baara fib(n) {
+  nii(n < 2)  n
+  note fib(n - 1) + fib(n - 2);
+}
+
+fib(40)

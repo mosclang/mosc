@@ -1,0 +1,8 @@
+nin a = 20
+nin b = seginka e=0 foo a kay niin 1 ye {
+    nin tmp = 2
+    e + a * tmp
+}.yel { it ->
+    it + 1
+}.yelema()
+A.yira('A:: $a; b == $b')

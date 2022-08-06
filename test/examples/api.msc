@@ -1,0 +1,12 @@
+nani {yira} ye kaboo '/examples/lib.msc'
+
+nin a = 20;
+boni baara wele(url: Seben): Abee {
+    nin res = A.bololo.awele(url)
+    yira("${res.status} ${++a}")
+    nii res.status == 200 {
+        seginni JSON.kalan(res.body)
+    } note {
+       seginni {}
+    }
+}

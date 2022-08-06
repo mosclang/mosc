@@ -1,0 +1,46 @@
+tii fib(n) {
+  nii(n < 2)  n
+  note fib(n - 1) + fib(n - 2);
+}
+nin a : Diat = 12.43
+A.yira("A ye ${Fen.sukuya(a)} ye")
+nin b: Diat = a + 3
+nin c: Diat = a * b - -2 - 40;
+nin d = "molobala"
+nin e: Seben = '${d + '3'} = ${a + b} pp' + 30;
+nin t: Tienya = tien && 4 && (galon || 1 & 2);
+A.yira(a, b, c, d, e)
+tii ake(m: Diat, r: Abee){
+    nin y: Diat = 2<<16
+}
+
+nin obj = {'mala': 'Molo', a: 'A', ['mm']: 'MM'}
+nin arr = ['mala', '3', 4, 5, obj]
+a = obj.mala
+obj.mala = "Mala"
+e = ['mala', '3', 4, 5, obj][4].mm
+A.yira("E.Dianya=" + e.dianya)
+A.yira(obj, arr)
+tii yira() {
+    nin a1 = {'mala': 'Molo', a: 'A', ['mm']: 'MM'}
+    nin b1 = a1.a
+    c = 20
+    nin c1 = c
+    seginni diate(12 + c1, 30)
+}
+tii diate(a: Diat, b: Diat): Diat {
+    seginni a + b
+}
+nin yira2 = yira
+nin yir = yira2();
+nii yir > 80 {
+    yir = 80
+} note nii (yir < 70) {
+    yir = 70
+} note {
+    yir = 20
+}
+yir--
+A.yira(--yir)
+A.yira(yir)
+A.yira(fib(10))

@@ -1,0 +1,24 @@
+nin obj = {a: 'Molo', 'b': 'B', c: 'C'}
+obj kono (k, v) {
+    A.yira("$k == $v")
+}
+
+[{name: 'Molo', lname: 'DOUMBIA'},{name: 'Issa', lname: 'DOUMBIA'}] kono {name, lname} {
+    A.yira("$name --- $lname")
+}
+# seginka (k, v) {a: 'Molo', 'b': 'B', c: 'C'} kono {
+#    A.yira("$k == $v")
+#}
+
+A.yira(Fen.keys({a: 'Molo', 'b': 'B', c: 'C'}))
+A.yira(Fen.values({a: 'Molo', 'b': 'B', c: 'C'}))
+# Desturction
+[{n: 'N', c: 'C'}, {n: 'P', c: 'P'}] kono {n, c} {
+    A.yira("Tab: [$n --> $c]")
+}
+# Desturction
+#seginka {n, ...c} [{n: 'N', c: 'C', d: 'D', e: 'E'}, {n: 'P', c: 'P'}] kono {
+#     A.yira("Tab: [n = $n, c = $c]")
+#}
+
+

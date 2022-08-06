@@ -1,0 +1,13 @@
+nani {wele inafo w} ye kaboo '/examples/api.msc'
+nin a = 10
+A.yira('a=$a')
+nin obj = {name: "Molo", age: 28, owns: ["PC", "Smartphone"]}
+nin str = JSON.seben(obj)
+A.yira(str)
+A.yira(JSON.kalan(str))
+nin url = "http://localhost:8080/api"
+nin res = w(url)
+res kono u {
+    A.yira(u)
+}
+A.yira('a=$a')

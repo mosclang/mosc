@@ -1,0 +1,15 @@
+baara forEach(e, fn) {
+    fn(e)
+}
+A.yira(A)
+baara yira(a) {
+    A.yira(a)
+}
+["molo", "droid", "tim"] kono a {
+    forEach(a, A.yira)
+}
+
+
+baara Walan.abee() {
+
+}

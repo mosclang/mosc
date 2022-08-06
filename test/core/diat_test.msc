@@ -1,0 +1,18 @@
+tii tikiya(expr, msg) {
+    nii expr segin niin tien
+    Djuru.tike(msg)
+}
+
+tikiya(Diat.kaboSebenna("12") == 12, "Kaganka kè kelen ye")
+tikiya(20001002 < Diat.BELEBELE, "Diat be la belebele kagan ka tiaya niin diateden bee ye")
+tikiya(20001002 > Diat.FITINI, "Diat be la fitini kagan ka dogoya niin diateden bee ye")
+tikiya(12 + 12 == 24, "12 + 12 kagan ka ben 24 ma")
+tikiya(24 - 12 == 12, "24 - 12 kagan ka ben 12 ma")
+tikiya(2 * 12 == 24, "2 * 12 kagan ka ben 24 ma")
+tikiya(24 / 2 == 12, "24 / 2 kagan ka ben 12 ma")
+tikiya(24 % 5 == 4, "24 % 5 kagan ka ben 4 ma")
+tikiya(24 % 6 == 0, "24 % 6 kagan ka ben 0 ma")
+tikiya(0 - 0 == 0, "0 - 0 kagan ka ben 0 ma")
+tikiya(0 + 0 == 0, "0 + 0 kagan ka ben 0 ma")
+tikiya(0 * 0 == 0, "0 * 0 kagan ka ben 0 ma")
+

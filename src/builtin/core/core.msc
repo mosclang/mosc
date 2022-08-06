@@ -1,0 +1,500 @@
+kulu Diat
+kulu Djuru
+kulu Tienya
+kulu Tii
+kulu Funan;
+kulu Gansan
+kulu A {
+    dialen yira() {
+         A.seben_("\n")
+    }
+    dialen yira(arg) {
+        A.fenSeben_(arg)
+        A.seben_("\n")
+        segin niin arg
+    }
+    dialen fenSeben_(obj) {
+        nin str = obj.sebenma
+        nii str ye Seben {
+            A.seben_(str)
+        } note {
+            A.seben_("[Fen kunta sorola]")
+        }
+    }
+    dialen beeYira(sequence) {
+       seginka sequence kono object A.fenSeben_(object)
+        A.seben_("\n")
+    }
+
+     dialen seben(arg) {
+        A.fenSeben_(arg)
+        segin niin arg
+     }
+
+      dialen beeSeben(sequence) {
+        seginka sequence kono object A.fenSeben_(object)
+      }
+};
+
+#*
+* The Tugun kulu, a continous elements of object
+* It's the base kulu of all iterable kulu such as Wala, Walan, Seben
+*#
+
+kulu Tugun {
+  bee(f) {
+    nin result = tien
+    seginka (ale kono element) {
+      result = f.weele(element)
+      nii !result segin niin result
+    }
+    segin niin result
+  }
+
+  sukuSuku(f) { #any
+    nin result = galon
+    seginka (ale kono element) {
+      result = f.weele(element)
+      nii result segin niin result
+    }
+    segin niin result
+  }
+
+  bAkono(element) {
+    seginka ale kono item {
+      nii element == item segin niin tien
+    }
+    segin niin galon
+  }
+
+  hakan {#count
+    nin result = 0
+    seginka ale kono element {
+      result = result + 1
+    }
+    segin niin result
+  }
+
+  hakan(f) {
+    nin result = 0
+    seginka ale kono element {
+      nii (f.weele(element)) result = result + 1
+    }
+    segin niin result
+  }
+
+  kelenkelen(f) {
+    seginka ale kono element {
+      f.weele(element)
+    }
+  }
+
+  laKolon {
+       segin niin nii (ale.iterate(gansan, 1)) {
+         galon;
+       } note {
+         tien
+       }
+  }
+
+  yelema(transformation) { WalaTugun.kura(ale, transformation) }
+
+  pan(count) {
+    nii (!(count ye Diat) || !count.yeInt || count < 0) {
+      Djuru.tike("Count must be a non-negative integer.")
+    }
+
+    segin niin PanTugun.kura(ale, count)
+  }
+
+  taa(count) {
+    nii (!(count ye Diat) || !count.yeInt || count < 0) {
+      Djuru.tike("Count must be a non-negative integer.")
+    }
+
+    segin niin TaaTugun.kura(ale, count)
+  }
+
+  yoroMin(predicate) { YorominTugun.kura(ale, predicate) }
+
+  dogoya(acc, f) {
+    seginka ale kono element {
+      acc = f.weele(acc, element)
+    }
+    segin niin acc
+  }
+
+  dogoya(f) {
+    nin iter = ale.iterate(gansan, 1)
+    nii (!iter) Djuru.tike("Can't reduce an empty sequence.")
+
+    # Seed with the first element.
+    nin result = ale.iteratorValue(iter)
+    foo (iter = ale.iterate(iter, 1)) {
+      result = f.weele(result, ale.iteratorValue(iter))
+    }
+
+    segin niin result
+  }
+
+  kunBen() {ale.kunBen("")}
+
+  kunBen(sep) {
+
+    nin first = tien
+    nin result = ""
+    seginka ale kono element {
+      nii (!first) result = result + sep
+      first = galon
+      result = result + element.sebenma
+    }
+
+    segin niin result
+  }
+
+  walanNa { # toList
+    nin result = Walan.kura()
+    seginka ale kono element {
+      result.aFaraAkan(element)
+    }
+    segin niin result
+  }
+  iterate(iterator) {
+        ale.iterate(iterator, 1);
+  }
+}
+kulu WalaTugun ye Tugun {
+    nin _sequence;
+    nin _fn;
+  dilan kura(sequence, fn) {
+    ale._sequence = sequence
+    ale._fn = fn
+  }
+
+  iterate(iterator, step) { ale._sequence.iterate(iterator, step) }
+  iteratorValue(iterator) { ale._fn.weele(ale._sequence.iteratorValue(iterator)) }
+}
+
+kulu PanTugun ye Tugun {
+    nin _sequence;
+    nin _count;
+  dilan kura(sequence, count) {
+    ale._sequence = sequence
+    ale._count = count
+  }
+
+  iterate(iterator, step) {
+    nii (iterator) {
+      segin niin ale._sequence.iterate(iterator, step)
+    } note {
+      iterator = ale._sequence.iterate(iterator, step)
+      nin count = ale._count
+      foo (count > 0 && iterator) {
+        iterator = ale._sequence.iterate(iterator, step)
+        count = count - 1
+      }
+      segin niin iterator
+    }
+  }
+
+  iteratorValue(iterator) { ale._sequence.iteratorValue(iterator) }
+}
+
+kulu TaaTugun ye Tugun {
+    nin _sequence;
+    nin _count;
+    nin _taken;
+
+  dilan kura(sequence, count) {
+    ale._sequence = sequence
+    ale._count = count
+  }
+
+  iterate(iterator, step) {
+    nii (!iterator) ale._taken = 1 note ale._taken = ale._taken + 1
+    nii (ale._taken > ale._count) segin niin gansan note segin niin ale._sequence.iterate(iterator, step)
+  }
+
+  iteratorValue(iterator) { ale._sequence.iteratorValue(iterator) }
+}
+
+kulu YorominTugun ye Tugun {
+    nin _sequence;
+    nin _fn;
+  dilan kura(sequence, fn) {
+    ale._sequence = sequence
+    ale._fn = fn
+  }
+
+
+  iterate(iterator, step) {
+    foo (iterator = ale._sequence.iterate(iterator, step)) {
+      nii (ale._fn.weele(ale._sequence.iteratorValue(iterator))) atike
+    }
+    segin niin iterator
+  }
+
+  iteratorValue(iterator) { ale._sequence.iteratorValue(iterator) }
+}
+
+
+kulu Seben ye Tugun {
+  bytes { SebenByteTugun.kura(ale) }
+  codePoints { SebenCodePointTugun.kura(ale) }
+
+  faraFara(delimiter) {
+    nii (!(delimiter ye Seben) || delimiter.laKolon) {
+      Djuru.tike("Delimiter must be a non-empty string.")
+    }
+
+    nin result = []
+
+    nin last = 0
+    nin index = 0
+
+    nin delimSize = delimiter.byteHakan_
+    nin size = ale.byteHakan_
+
+    foo (last < size && (index = ale.aDayoro(delimiter, last)) != -1) {
+      result.add(ale[last...index])
+      last = index + delimSize
+    }
+
+    nii (last < size) {
+      result.aFaraAkan(ale[last..-1])
+    } note {
+      result.aFaraAkan("")
+    }
+    segin niin result
+  }
+
+  falen(from, to) {
+    nii (!(from ye Seben) || from.isEmpty) {
+      Djuru.tike("From must be a non-empty string.")
+    } note nii (!(to ye Seben)) {
+      Djuru.tike("To must be a string.")
+    }
+
+    nin result = ""
+
+    nin last = 0
+    nin index = 0
+
+    nin fromSize = from.byteHakan_
+    nin size = ale.byteHakan_
+
+    foo (last < size && (index = ale.aDayoro(from, last)) != -1) {
+      result = result + ale[last...index] + to
+      last = index + fromSize
+    }
+
+    nii (last < size) result = result + ale[last..-1]
+
+    segin niin result
+  }
+
+  sanuya() { ale.sanuya_("\t\r\n ", tien, tien) }
+  sanuya(chars) { ale.sanuya_(chars, tien, tien) }
+  labanSanuya() { ale.sanuya_("\t\r\n ", galon, tien) }
+  labanSanuya(chars) { ale.sanuya_(chars, galon, tien) }
+  damineSanuya() { ale.sanuya_("\t\r\n ", tien, galon) }
+  damineSanuya(chars) { ale.sanuya_(chars, tien, galon) }
+
+  sanuya_(chars, trimStart, trimEnd) {
+    nii (!(chars ye Seben)) {
+      Djuru.tike("Characters must be a string.")
+    }
+
+    nin codePoints = chars.codePoints.walanNa
+
+    nin start
+    nii (trimStart) {
+      foo (start = ale.iterate(start, 1)) {
+        nii (!codePoints.bAkono(ale.codePointYoro_(start))) atike
+      }
+
+      nii (start == galon) segin niin ""
+    } note {
+      start = 0
+    }
+
+    nin end
+    nii (trimEnd) {
+      end = ale.byteHakan_ - 1
+      foo (end >= start) {
+        nin codePoint = ale.codePointYoro_(end)
+        nii (codePoint != -1 && !codePoints.bAkono(codePoint)) atike
+        end = end - 1
+      }
+
+      nii (end < start) segin niin ""
+    } note {
+      end = -1
+    }
+
+    segin niin ale[start..end]
+  }
+
+  *(count) {
+    nii (!(count ye Diat) || !count.yeInt || count < 0) {
+      Djuru.tike("Count must be a non-negative integer.")
+    }
+
+    nin result = ""
+    seginka 0...count kono i {
+      result = result + ale
+    }
+    segin niin result
+  }
+}
+
+kulu SebenByteTugun ye Tugun {
+  nin _string;
+  dilan kura(string) {
+    ale._string = string
+  }
+
+  [index] { ale._string.byteYoro_(index) }
+  iterate(iterator, step) { ale._string.iterateByte_(iterator, step) }
+  iteratorValue(iterator) { ale._string.byteYoro_(iterator) }
+
+  hakan { ale._string.byteHakan_ }
+}
+
+kulu SebenCodePointTugun ye Tugun {
+  nin _string
+  dilan kura(string) {
+    ale._string = string
+  }
+
+  [index] { ale._string.codePointYoro_(index) }
+  iterate(iterator, step) { ale._string.iterate(iterator, step) }
+  iteratorValue(iterator) { ale._string.codePointYoro_(iterator) }
+
+  hakan { ale._string.hakan }
+}
+
+kulu Walan ye Tugun {
+  aBeeFaraAkan(other) {
+    seginka other kono element {
+      ale.aFaraAkan(element)
+    }
+    segin niin other
+  }
+
+  woloma() { ale.woloma {(low, high)=> low < high } }
+
+  woloma(comparer) {
+    nii (!(comparer ye Tii)) {
+      Djuru.tike("Comparer must be a function.")
+    }
+    ale.wolomaTelimani_(0, ale.hakan - 1, comparer)
+    segin niin ale
+  }
+
+  wolomaTelimani_(low, high, comparer) {
+    nii (low < high) {
+      nin p = ale.kilakila_(low, high, comparer)
+      ale.quicksort_(low, p - 1, comparer)
+      ale.quicksort_(p + 1, high, comparer)
+    }
+  }
+
+  kilakila_(low, high, comparer) {
+    nin p = ale[high]
+    nin i = low - 1
+    seginka (low..high-1 kono j) {
+      nii (comparer.weele(ale[j], p)) {
+        i = i + 1
+        nin t = ale[i]
+        ale[i] = ale[j]
+        ale[j] = t
+      }
+    }
+    nin t = ale[i+1]
+    ale[i+1] = ale[high]
+    ale[high] = t
+    segin niin i+1
+  }
+
+  sebenma { "[${ale.kunBen(", ")}]" }
+
+  +(other) {
+    nin result = ale[0..-1]
+    seginka other kono element {
+      result.add(element)
+    }
+    segin niin result
+  }
+
+  *(count) {
+    nii (!(count ye Diat) || !count.yeInt || count < 0) {
+      Djuru.tike("Count must be a non-negative integer.")
+    }
+
+    nin result = []
+    seginka 0...count kono i {
+      result.aBeeFaraAkan(ale)
+    }
+    segin niin result
+  }
+}
+
+kulu Wala ye Tugun {
+  keys { WalaKeyTugun.kura(ale) }
+  values { WalaValueTugun.kura(ale) }
+
+  sebenma {
+    nin first = tien
+    nin result = "{"
+
+    seginka ale.keys kono key {
+      nii (!first) result = result + ", "
+      first = galon
+      result = result + "${key}: ${ale[key]}"
+    }
+
+    segin niin result + "}"
+  }
+
+  iteratorValue(iterator) {
+    segin niin WalaEntry.kura(
+        ale.keyIteratorValue_(iterator),
+        ale.valueIteratorValue_(iterator))
+  }
+}
+
+kulu WalaEntry {
+  nin _key
+  nin _value
+  dilan kura(key, value) {
+    ale._key = key
+   ale._value = value
+  }
+
+  key { ale._key }
+  value { ale._value }
+
+  sebenma { "${ale._key}:${ale._value}" }
+}
+
+kulu WalaKeyTugun ye Tugun {
+  nin _map;
+  dilan kura(map) {
+    ale._map = map
+  }
+
+  iterate(n, step) { ale._map.iterate(n, step) }
+  iteratorValue(iterator) { ale._map.keyIteratorValue_(iterator) }
+}
+
+kulu WalaValueTugun ye Tugun {
+  nin _map;
+  dilan kura(map) {
+    ale._map = map
+  }
+
+  iterate(n, step) { ale._map.iterate(n, step) }
+  iteratorValue(iterator) { ale._map.valueIteratorValue_(iterator) }
+}
+

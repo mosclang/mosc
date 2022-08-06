@@ -1,0 +1,21 @@
+kulu Generator {
+    nin _generator
+    dilan kura(max) {
+        ale._generator = Djuru.kura {
+            nin v = 0
+            foo(max > v) {
+                v = v + 1
+                Djuru.mine(v)
+            }
+        }
+        # segin
+    }
+    next { ale._generator.weele() }
+    hasNext { !ale._generator.ok && ale._generator.fili == gansan }
+}
+
+
+nin gen = Generator.kura(100)
+foo(gen.hasNext) {
+  A.yira(gen.next)
+}

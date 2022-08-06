@@ -1,0 +1,37 @@
+
+
+nin a = {togo: "Molo", djamou: "DOUMBIA", dugu: "Molobala", "faa": "Boua"}
+nin {togo, djamou, ...rest} = a
+nin [folo, [{fila:filanan}]] = ["Folo", [{fila: "Filapp", "ss": "sss"}, "Saba"]]
+nin b = {sen: "Bien", ...a}
+A.yira(a)
+A.yira(togo)
+A.yira(djamou)
+A.yira("${folo};;${filanan}");
+A.yira(rest);
+
+b["togo"] = "Molobala"
+A.yira("B: ${b}");
+
+#tii test(...a) {
+#    A.yira("A ye: $a")
+#}
+
+tii test({togo, dugu}) {
+    A.yira("to:: ${togo} be bo ${dugu} la")
+}
+tii test1(a, [togo, dugu]) {
+    A.yira("${a}: to:: ${togo} be bo ${dugu}")
+}
+
+test1(1, [...["Madou", "Marako"], "Bamako"])
+test(a)
+
+
+seginka [["Madou", "Marako"], ["Bamako", "Mali"]] kono [a1, a2] {
+    A.yira("${a1}: ${a2}");
+}
+
+seginka [{sii: 12, togo: "Bourama"}, {sii: 22, togo: "Madou"}, {sii: 24, togo: "Issa"}] kono {sii: a1, togo: a2} {
+    A.yira("${a1}: ${a2}");
+}

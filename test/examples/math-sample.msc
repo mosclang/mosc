@@ -1,0 +1,5 @@
+A.yira("Cos(0.3) === ${Diate.cos(0.3)}")
+A.yira("Sin(0.2) = ${Diate.sin(0.2)}")
+A.yira("PI== ${Diate.PI}")
+A.yira("Exp== ${Diate.E}")
+A.yira("COS::== ${Diate.test(20)}")

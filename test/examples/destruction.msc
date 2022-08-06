@@ -1,0 +1,49 @@
+nin {a, b, d} = {a: "molo", b: "molpp", c: "Càpp"}
+A.yira([a, b, d])
+nin [c1, d1] = [2, 3, 4, 5]
+A.yira([c1, d1])
+
+tii fn({a, b}) {
+    A.yira([a, b])
+}
+
+fn({a: 3, b: 4})
+
+tii fnA([a, b]) {
+    A.yira([a, b])
+}
+fnA([5, 4, 3, 5])
+
+nin {g: {g}, h: [o], ...p} = {g: {m: "m", g: "po"}, h: [23, 1, 2], o: "o", pm: "pm"}
+A.yira([g, o, p])
+
+nin [m1, z, ...pmllpm] = [1, 2, 3, 4, 5, 6];
+
+kulu Test {
+    nin arg = "Polo";
+    dilan kura(arg) {
+        ale.arg = arg;
+    }
+    dilan kura() {
+        # ale.arg = arg;
+    }
+}
+
+tii Test.intern(a) {
+    A.yira("Extension work: $a: ${ale.arg}")
+}
+dialen tii Test.extern(a) {
+    A.yira("Static Extension work: $a")
+}
+
+Test.extern("Molo")
+Test.kura().intern("Molo")
+
+
+kulu Math {
+     dialen cos(a) {
+          segin niin a.cos;
+     }
+}
+
+A.yira(Math.cos(12))
