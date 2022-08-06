@@ -1,9 +1,3 @@
----
-title: Mosc
-type: docs
-bookToc: false
----
-
 ## Introduction 
 
 Mosc is tiny simple programing language writen in C.  Mosc VM reads, compiles and interprets Mosc code.  Mosc is intended to allow **Bambara** speakers people to code easily in **Bambara**. That will simplify a lot programing learning curve for those people who don't have an easy access to software developement stuffs.  
