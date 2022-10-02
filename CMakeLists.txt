@@ -3,10 +3,11 @@ project(mosc)
 
 set(CMAKE_C_STANDARD 99)
 
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release)
-endif()
+endif ()
 
+set(MSC_DEPS)
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
@@ -46,7 +47,14 @@ file(GLOB SOURCE_FILES_H src/**/*.h)
 file(GLOB SOURCE_FILES_INC src/**/*.h)
 set(SOURCE_FILES ${SOURCE_FILES_C} ${SOURCE_FILES_H} ${SOURCE_FILES_INC})
 
+IF (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    LIST(APPEND MSC_DEPS m)
+ELSEIF (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    LIST(APPEND MSC_DEPS m)
+ENDIF ()
+
 add_library(mosc SHARED ${SOURCE_FILES})
+TARGET_LINK_LIBRARIES(mosc PRIVATE ${MSC_DEPS})
 add_library(moscs ${SOURCE_FILES})
 set(SOURCE_FILES test/main.c)
 add_executable(moscc ${SOURCE_FILES})
