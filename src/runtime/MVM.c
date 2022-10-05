@@ -266,8 +266,6 @@ MVM *MSCNewVM(MSCConfig *config) {
 void MSCFreeVM(MVM *vm) {
     ASSERT(vm->methodNames.count > 0, "VM appears to have already been freed.");
 
-    // Free all of the GC objects.
-    MSCFreeGC(vm->gc);
 
     // Tell the user if they didn't free any handles. We don't want to just free
     // them here because the host app may still have pointers to them that they
@@ -275,6 +273,9 @@ void MSCFreeVM(MVM *vm) {
     ASSERT(vm->handles == NULL, "All handles have not been released.");
 
     MSCSymbolTableClear(vm, &vm->methodNames);
+
+    // Free all of the GC objects.
+    MSCFreeGC(vm->gc);
 
 }
 
