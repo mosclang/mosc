@@ -255,8 +255,8 @@ kulu Seben ye Tugun {
     nin delimSize = delimiter.byteHakan_
     nin size = ale.byteHakan_
 
-    foo (last < size && (index = ale.aDayoro(delimiter, last)) != -1) {
-      result.add(ale[last...index])
+    foo (last < size && (index = ale.uDayoro(delimiter, last)) != -1) {
+      result.aFaraAkan(ale[last...index])
       last = index + delimSize
     }
 
@@ -283,7 +283,7 @@ kulu Seben ye Tugun {
     nin fromSize = from.byteHakan_
     nin size = ale.byteHakan_
 
-    foo (last < size && (index = ale.aDayoro(from, last)) != -1) {
+    foo (last < size && (index = ale.uDayoro(from, last)) != -1) {
       result = result + ale[last...index] + to
       last = index + fromSize
     }
@@ -422,7 +422,7 @@ kulu Walan ye Tugun {
   +(other) {
     nin result = ale[0..-1]
     seginka other kono element {
-      result.add(element)
+      result.aFaraAkan(element)
     }
     segin niin result
   }
