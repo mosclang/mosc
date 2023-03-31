@@ -117,7 +117,7 @@ nin birds = {
   "Guinée": "Guinea fowl"
 }
 
-seginka (bird kono birds) {
+seginka (birds kono bird) {
   A.yira("The state bird of ${bird.key} is ${bird.value}")
 }
 ```
@@ -132,7 +132,7 @@ nin birds = {
   "Guinée": "Guinea fowl"
 }
 
-seginka (diamana kono birds.keys) {
+seginka (birds.keys kono diamana) {
   A.yira("The state bird of $diamana is ${birds[diamana]}")
 }
 ```

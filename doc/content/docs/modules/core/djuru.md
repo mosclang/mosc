@@ -219,14 +219,14 @@ djuru.alaTeme(32)                # > #5: send to 'result'
 Transfer to this djuru, but set this djuru into an error state. The `djuru.fili` value will be populated with the value in `error`.
 
 ```mosc
-nin A = Djuru.kura {
+nin C = Djuru.kura {
   A.yira("transferred to A")     # > #4
   B.filiLaTeme("error!")            # > #5
 }
 
 nin B = Djuru.kura {
   A.yira("started B")            # > #2 
-  A.alaTeme()                         # > #3
+  C.alaTeme()                         # > #3
   A.yira("should not get here")
 }
 

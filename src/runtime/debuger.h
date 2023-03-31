@@ -20,6 +20,7 @@ void MSCDumpStack(Djuru *fiber);
 int MSCDumpInstruction(MVM *vm, Function *fn, int i);
 
 void MSCDumpCode(MVM *vm, Function *fn);
+void MSCDumpSymbolTable(const SymbolTable* table);
 
 
 #endif //CPMSC_DEBUGER_H

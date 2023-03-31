@@ -464,3 +464,13 @@ void MSCDumpCode(MVM *vm, Function *fn) {
 
     printf("\n");
 }
+
+
+void MSCDumpSymbolTable(const SymbolTable *symbols) {
+    // See if the symbol is already defined.
+    // TODO: O(n). Do something better.
+    for (int i = 0; i < symbols->count; i++) {
+       printf("Symb %d = %s", i, symbols->data[i]->value);
+    }
+
+}

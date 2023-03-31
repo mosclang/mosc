@@ -2,6 +2,7 @@
 // Created by Mahamadou DOUMBIA [OML DSI] on 11/01/2022.
 //
 
+#include <msc.h>
 #include "MVM.h"
 #include "../builtin/Primitive.h"
 #include "debuger.h"
@@ -14,19 +15,19 @@
 #if MSC_OPT_KUNFE
 
 #include "../meta/Kunfe.h"
-#include "../memory/Value.h"
-#include "../helpers/Helper.h"
-#include "../api/msc.h"
 
 #endif
 
 static void printFunctionCode(Function *fn) {
-    /*uint8_t *ptr = fn->code.data;
+#ifdef DEBUG
+    uint8_t *ptr = fn->code.data;
     printf("\n%s[", fn->debug->name);
     while ((ptr) < fn->code.data + fn->code.count) {
         printf("%d, ", *ptr++);
     }
-    printf("]\n");*/
+    printf("]\n");
+
+#endif
 
 
 }
@@ -272,11 +273,11 @@ void MSCFreeVM(MVM *vm) {
     // may try to use. Better to tell them about the bug early.
     ASSERT(vm->handles == NULL, "All handles have not been released.");
 
-    MSCSymbolTableClear(vm, &vm->methodNames);
 
     // Free all of the GC objects.
     MSCFreeGC(vm->gc);
 
+    MSCSymbolTableClear(vm, &vm->methodNames);
 }
 
 void MSCCollectGarbage(MVM *vm) {
@@ -304,8 +305,8 @@ void MSCFinalizeExtern(MVM *vm, Extern *externObj) {
 
     ASSERT(method->type == METHOD_EXTERN, "Finalizer should be foreign.");
 
-    //MSCFinalizerFn finalizer = (MSCFinalizerFn)method->as.foreign;
-    //finalizer(foreign->data);
+    MSCFinalizerFn finalizer = (MSCFinalizerFn)method->as.foreign;
+    finalizer(externObj->data);
 }
 
 MSCHandle *MSCMakeCallHandle(MVM *vm, const char *signature) {
@@ -972,7 +973,6 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
 
             switch (method->type) {
                 case METHOD_PRIMITIVE:
-                    // printf("NumArgs:: %d %f %f\n", numArgs, args[0].as.num, args[1].as.num);
                     if (method->as.primitive(vm, args)) {
                         // The result is now in the first arg slot. Discard the other
                         // stack slots.
@@ -1021,7 +1021,6 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
         {
             Upvalue **upvalues = frame->closure->upvalues;
             PUSH(*upvalues[READ_BYTE()]->value);
-            // printf("LOAD UPVALUE %d", instruction);
             DISPATCH();
         }
 
@@ -1764,7 +1763,6 @@ int MSCDefineVariable(MVM *vm, Module *module, const char *name, int nameLength,
     if (symbol == -1) {
         // Brand new variable.
         symbol = MSCSymbolTableAdd(vm, &module->variableNames, name, (size_t) nameLength);
-        // printf("Defining new variable:: %s %d [%s]\n", name, symbol, module->variableNames.data[0]->value);
         MSCWriteValueBuffer(vm, &module->variables, value);
     } else if (IS_NUM(module->variables.data[symbol])) {
         // An implicitly declared variable's value will always be a number.
