@@ -278,6 +278,9 @@ static int dumpInstruction(MVM *vm, Function *fn, int i, int *lastLine) {
         case OP_END:
             printf("END\n");
             break;
+        case OP_LOAD_ON:
+            printf("LOAD_ON\n");
+            break;
 
         default:
             printf("UKNOWN! [%d]\n", bytecode[i - 1]);

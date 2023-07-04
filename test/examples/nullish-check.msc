@@ -1,0 +1,17 @@
+tii tikiya(expr, msg) {
+    nii expr segin niin tien
+    Djuru.tike(msg)
+}
+
+nin a = "molo"
+nin b = a ?? 20
+nin c
+tikiya(b == "molo", "Expected B to be 'molo'")
+A.yira("B is $b")
+a=gansan
+b = a ?? 20
+tikiya(b==20, "B should be equals to 20")
+A.yira("B is now $b")
+b = a ?? c ?? "test${1}"
+tikiya(b == "test1", "B should be equals to test1")
+A.yira("B is now $b")

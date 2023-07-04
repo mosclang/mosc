@@ -1,0 +1,10 @@
+tii tikiya(expr, msg) {
+    nii expr segin niin tien
+    Djuru.tike(msg)
+}
+tii test() {
+    segin niin 20
+}
+nin a = test()?.sin ?? 10
+
+A.yira(a ?? 20 ?? 30)

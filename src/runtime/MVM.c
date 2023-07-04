@@ -2,7 +2,7 @@
 // Created by Mahamadou DOUMBIA [OML DSI] on 11/01/2022.
 //
 
-#include <msc.h>
+
 #include "MVM.h"
 #include "../builtin/Primitive.h"
 #include "debuger.h"
@@ -273,11 +273,11 @@ void MSCFreeVM(MVM *vm) {
     // may try to use. Better to tell them about the bug early.
     ASSERT(vm->handles == NULL, "All handles have not been released.");
 
+    MSCSymbolTableClear(vm, &vm->methodNames);
 
     // Free all of the GC objects.
     MSCFreeGC(vm->gc);
 
-    MSCSymbolTableClear(vm, &vm->methodNames);
 }
 
 void MSCCollectGarbage(MVM *vm) {
@@ -858,6 +858,11 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
         DROP();
 
         DISPATCH();
+        CASE_CODE(LOAD_ON):
+
+        PUSH(PEEK());
+
+        DISPATCH();
         CASE_CODE(NULL):
         PUSH(NULL_VAL);
         DISPATCH();
@@ -1133,6 +1138,8 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
 
         CASE_CODE(OR):
         {
+            // MSCDumpStack(djuru);
+            // MSCDumpInstruction(vm, fn, (int)(ip - fn->code.data));
             uint16_t offset = READ_SHORT();
             Value condition = PEEK();
 
@@ -1143,6 +1150,8 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
                 // Short-circuit the right hand side.
                 ip += offset;
             }
+            // MSCDumpStack(djuru);
+            // MSCDumpInstruction(vm, fn, (int)(ip - fn->code.data));
             DISPATCH();
         }
 

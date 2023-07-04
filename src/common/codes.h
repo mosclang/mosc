@@ -117,3 +117,5 @@ OPCODE(CALL, 0)                 // = 77
 OPCODE(FIELD, 0)                 // = 78
 
 OPCODE(END , 0)                 // = 79
+
+OPCODE(LOAD_ON , 1)              // = 80

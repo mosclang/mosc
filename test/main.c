@@ -35,7 +35,7 @@ static const char *readSource(const char *name) {
 
 int main() {
     // printf("%zu, %zu", sizeof(Djuru),sizeof(Class));
-    const char *text = readSource("../test/examples/when_sample2.msc");
+    const char *text = readSource("../test/examples/nullcheck.msc");
     if(text == NULL) {
         printf("Failed to read file");
         return 0;
@@ -47,7 +47,7 @@ int main() {
     config.writeFn = print;
 
     MVM *vm = MSCNewVM(&config);
-    MSCInterpret(vm, "scritp", text);
+    MSCInterpret(vm, "script", text);
     MSCFreeVM(vm);
     free((void *) text);
     return 0;

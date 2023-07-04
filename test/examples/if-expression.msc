@@ -1,3 +1,8 @@
+tii main() {
+
+
+}
+
 nin a = 10
 nin b = 0;
 nin c = nii a > 20 {
@@ -7,3 +12,11 @@ nin c = nii a > 20 {
     b = a * tmp
 }
 A.yira(c)
+
+nin d = nii (b < 30) {
+    A.yira("B est inferieur à 30")
+}
+nin list = [1, 2, 3, 4, 5, 6]
+A.yira(list[list.hakan-1..0])
+
+main()
