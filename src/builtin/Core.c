@@ -698,7 +698,9 @@ DEF_NUM_FN(cos, cos)
 
 DEF_NUM_FN(floor, floor)
 
-DEF_NUM_FN(negate, -)
+DEF_NUM_FN(unary_minus, -)
+
+DEF_NUM_FN(unary_plus, +)
 
 DEF_NUM_FN(round, round)
 
@@ -1331,7 +1333,8 @@ void load(MVM *vm) {
     PRIMITIVE(vm->core.numClass, "ceil", num_ceil);
     PRIMITIVE(vm->core.numClass, "cos", num_cos);
     PRIMITIVE(vm->core.numClass, "floor", num_floor);
-    PRIMITIVE(vm->core.numClass, "-", num_negate);
+    PRIMITIVE(vm->core.numClass, "-", num_unary_minus);
+    PRIMITIVE(vm->core.numClass, "+", num_unary_plus);
     PRIMITIVE(vm->core.numClass, "round", num_round);
     PRIMITIVE(vm->core.numClass, "min(_)", num_min);
     PRIMITIVE(vm->core.numClass, "max(_)", num_max);

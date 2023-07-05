@@ -40,7 +40,7 @@ typedef enum {
     PREC_RANGE,         // ..
     PREC_TERM,          // + -
     PREC_FACTOR,        // * / %
-    PREC_UNARY,         // unary - ! ~ ...(spread or rest element)
+    PREC_UNARY,         // unary - + ! ~ ...(spread or rest element)
     PREC_CALL,          // . ?. () []
     PREC_PRIMARY
 } Precedence;
@@ -3226,7 +3226,7 @@ void constructorSignature(Compiler *compiler, Signature *signature) {
 GrammarRule rules[] = {
         /* NUMBER_CONST_TOKEN           0 */ PREFIX(literal),
         /* TRING_CONST_TOKEN            1  */ PREFIX(literal),
-        /* PLUS_TOKEN                   2  */ INFIX_OPERATOR(PREC_TERM, "+"),
+        /* PLUS_TOKEN                   2  */ OPERATOR("+"),
         /* MINUS_TOKEN                  3  */ OPERATOR("-"),
         /* MULT_TOKEN                   4  */ INFIX_OPERATOR(PREC_FACTOR, "*"),
         /* DIV_TOKEN                    5  */ INFIX_OPERATOR(PREC_FACTOR, "/"),

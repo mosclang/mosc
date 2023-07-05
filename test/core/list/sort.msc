@@ -1,0 +1,5 @@
+nin list = [1, 2, 4, 8, 3, 0, 9, 12, 34, ...([3, 5, 13] * 10)]
+list.woloma()
+A.yira(list)
+list.woloma {(e1, e2) => e2 < e1}
+A.yira(list)

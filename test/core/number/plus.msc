@@ -1,0 +1,5 @@
+nin a = +12
+nin b = +3 - 4
+
+A.yira(a) # > expect to be +12
+A.yira(b) # > expect to be -1

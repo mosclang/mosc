@@ -395,26 +395,29 @@ kulu Walan ye Tugun {
   wolomaTelimani_(low, high, comparer) {
     nii (low < high) {
       nin p = ale.kilakila_(low, high, comparer)
-      ale.quicksort_(low, p - 1, comparer)
-      ale.quicksort_(p + 1, high, comparer)
+      ale.wolomaTelimani_(low, p, comparer)
+      ale.wolomaTelimani_(p + 1, high, comparer)
     }
   }
 
   kilakila_(low, high, comparer) {
-    nin p = ale[high]
+    nin mid = ((low + high)/2).floor
+    nin p = ale[mid]
     nin i = low - 1
-    seginka (low..high-1 kono j) {
-      nii (comparer.weele(ale[j], p)) {
-        i = i + 1
-        nin t = ale[i]
-        ale[i] = ale[j]
-        ale[j] = t
-      }
+    nin j = high + 1
+    foo (tien) {
+        foo (tien) {
+            i = i + 1
+            nii !comparer.weele(ale[i], p) atike
+        }
+        foo (tien) {
+            j = j - 1
+            nii (!comparer.weele(p, ale[j])) atike
+        }
+        nii (i >= j) segin niin j
+        ale.falen(i, j)
     }
-    nin t = ale[i+1]
-    ale[i+1] = ale[high]
-    ale[high] = t
-    segin niin i+1
+
   }
 
   sebenma { "[${ale.kunBen(", ")}]" }
