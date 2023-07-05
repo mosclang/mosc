@@ -1164,6 +1164,32 @@ DEF_PRIMITIVE(string_toString) {
     RETURN_VAL(args[0]);
 }
 
+DEF_PRIMITIVE(string_compareTo)
+{
+    if (!validateString(vm, args[1], "Argument")) return false;
+
+    String* str1 = AS_STRING(args[0]);
+    String* str2 = AS_STRING(args[1]);
+
+    size_t len1 = str1->length;
+    size_t len2 = str2->length;
+
+    // Get minimum length for comparison.
+    size_t minLen = (len1 <= len2) ? len1 : len2;
+    int res = memcmp(str1->value, str2->value, minLen);
+
+    // If result is non-zero, just return that.
+    if (res) RETURN_NUM(res);
+
+    // If the lengths are the same, the strings must be equal
+    if (len1 == len2) RETURN_NUM(0);
+
+    // Otherwise the shorter string will come first.
+    res = (len1 < len2) ? -1 : 1;
+    RETURN_NUM(res);
+}
+
+
 DEF_PRIMITIVE(system_clock) {
     RETURN_NUM((double) clock() / CLOCKS_PER_SEC);
 }
@@ -1382,6 +1408,7 @@ void load(MVM *vm) {
     PRIMITIVE(vm->core.stringClass, "iteratorValue(_)", string_iteratorValue);
     PRIMITIVE(vm->core.stringClass, "beDamineNiin(_)", string_startsWith);
     PRIMITIVE(vm->core.stringClass, "sebenma", string_toString);
+    PRIMITIVE(vm->core.stringClass, "sunma(_)", string_compareTo);
 
     vm->core.listClass = AS_CLASS(MSCFindVariable(vm, coreModule, "Walan"));
     PRIMITIVE(vm->core.listClass->obj.classObj, "lafaa(_,_)", list_filled);

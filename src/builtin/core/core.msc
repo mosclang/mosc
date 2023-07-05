@@ -346,6 +346,11 @@ kulu Seben ye Tugun {
     }
     segin niin result
   }
+
+  <  (other) { ale.sunma(other) <  0 }
+  <= (other) { ale.sunma(other) <= 0 }
+  >  (other) { ale.sunma(other) >  0 }
+  >= (other) { ale.sunma(other) >= 0 }
 }
 
 kulu SebenByteTugun ye Tugun {

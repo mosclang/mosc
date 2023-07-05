@@ -1,0 +1,6 @@
+nin dugus = ["Molobala", "Marako", "Bamako"]
+
+dugus.woloma()
+A.yira(dugus)
+dugus.woloma {(e1, e2) => e1 > e2 }
+A.yira(dugus)
