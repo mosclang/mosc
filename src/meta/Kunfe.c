@@ -101,7 +101,6 @@ const char *MSCKunfeSource() {
 MSCExternClassMethods MSCKunfeBindExternClass(MVM *vm,
                                               const char *module,
                                               const char *className) {
-    printf("Kunfeko class binding\n");
     ASSERT(strcmp(className, "Kunfeko") == 0, "Should be in Kunfeko class.");
     MSCExternClassMethods methods;
     methods.allocate = randomAllocate;

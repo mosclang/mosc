@@ -1,0 +1,25 @@
+CMakeFiles/mosc.dir/Users/doumbia0804/CLionProjects/mosc/src/compiler/Token.c.o: \
+  /Users/doumbia0804/CLionProjects/mosc/src/compiler/Token.c \
+  /Users/doumbia0804/CLionProjects/mosc/src/compiler/Token.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/compiler/../memory/Value.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/lib/clang/17/include/stdint.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/stdint.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/bits/stdint.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/compiler/../memory/../common/constants.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/compiler/../memory/../helpers/Helper.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/compat/stdlib.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/stdlib.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/features.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/alloca.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/compiler/../memory/../helpers/../api/msc.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/stdio.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/wasi/api.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/lib/clang/17/include/stddef.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/lib/clang/17/include/stdbool.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/compiler/../memory/../common/common.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/compiler/../memory/../api/msc.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/memory.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/compat/string.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/string.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/strings.h

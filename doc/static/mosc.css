@@ -1,0 +1,280 @@
+:root {
+    --header-h: 8em;
+    --header: "Sanchez", helvetica, arial, sans-serif;
+    --subheader: "Lato", helvetica, arial, sans-serif;
+    --code: "Source Code Pro", Menlo, Monaco, Consolas, monospace;
+    --body: "Source Sans Pro", georgia, serif;
+    --code-bg: hsl(210, 0%, 99%);
+    --dark: hsl(210, 10%, 25%);
+    --darker: hsl(210, 20%, 10%);
+    --light: hsl(0, 0%, 100%);
+    --code-color: hsl(210, 20%, 30%);
+    --text: #333333;
+    --gray-5: whitesmoke;
+    --gray-10: #ebebec;
+    --gray-20: #d7d8da;
+    --gray-30: #c3c5c7;
+    --gray-50: #9c9fa2;
+    --gray-60: #888c90;
+    --gray-80: #60666a;
+    --link: hsl(200, 60%, 50%);
+    --link-dark: hsl(210, 60%, 20%);
+    --link-hover: hsl(210, 100%, 80%);
+    --link: hsl(200, 60%, 50%);
+    --module-link-dark:   hsl(160, 60%, 25%);
+    --module-link-hover:  hsl(130, 70%, 70%);
+    --module-link:        hsl(150, 70%, 40%);
+}
+
+/* Try related stuff */
+
+.buttons {
+    z-index: 2;
+    right: 0;
+    display: block;
+    position: absolute;
+    font-size: 1.3em;
+    letter-spacing: 0.05em;
+    margin-top: -1.25em;
+}
+.button {
+    margin-right: 0.25em;
+    display: inline-block;
+    text-align: right;
+}
+
+#examples {
+    margin-bottom: 1em;
+}
+
+#try-area {
+    margin-bottom: 1em;
+}
+
+#try-area p {
+    margin-left: 0.2em;
+    color: var(--gray-50);
+    font-size: 0.9em;
+    margin-bottom: -0.1em;
+}
+
+#try-output {
+    scrollbar-width: thin;
+    white-space: pre;
+    overflow-x: auto;
+    font-family: var(--code);
+    font-size: 1em;
+    line-height: 1.25em;
+}
+
+#try-result {
+    display: block;
+    margin-top: 1.4em;
+    position: absolute;
+    right: 0;
+}
+
+#try-result.error {
+    color: #c00;
+    font-weight: bold;
+}
+
+span.token.error {
+    color: #c00;
+}
+
+.codejar-linenumbers {
+    background-color: #f9f9f9 !important;
+    border-left: solid 1px hsl(200, 20%, 88%);
+    border-top: solid 1px hsl(200, 20%, 88%);
+    border-bottom: solid 1px hsl(200, 20%, 88%);
+    color: #d9d9d9 !important;
+    mix-blend-mode: normal !important;
+    width: 2.5em !important;
+    text-align: right !important;
+    padding-left: 0 !important;
+    padding-right: 0.5em !important;
+}
+
+#try-code {
+    scrollbar-width: thin;
+    border-radius: 0.01em;
+    border: solid 1px hsl(200, 20%, 88%);
+    font-family: 'Source Code Pro', monospace;
+    font-size: 14px;
+    font-weight: 400;
+    height: auto;
+    letter-spacing: normal;
+    line-height: 1.5em;
+    padding: 1em;
+    tab-size: 2;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+tr {
+    margin: 0;
+    padding: 0;
+    vertical-align: top;
+}
+
+th, td {
+    font-size: 14px;
+    line-height: 20px;
+    text-align: left;
+}
+
+/* Bar charts on the performance page.*/
+table.chart {
+    margin: 4px 0 0 0;
+    padding: 5px 0 5px 25px;
+}
+
+table.chart td, th {
+    line-height: 14px;
+    margin: 0;
+    padding: 1px 0;
+}
+
+table.chart th {
+    font-size: 14px;
+    width: 100px;
+}
+
+table.chart .chart-bar {
+    display: inline-block;
+    font: 13px var(--body);
+    color: var(--light);
+    background: var(--link);
+    border-bottom: solid 1px var(--link-dark);
+    text-align: right;
+    border-radius: 2px;
+}
+
+table.chart .chart-bar.mosc {
+    background: #1d5176;
+    border-bottom: solid 1px var(--link-dark);
+}
+
+/* Precedence table on expressions page.*/
+table.precedence th {
+    font: 500 11px var(--subheader);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--gray-60);
+
+    padding: 6px 0;
+    border-bottom: solid 1px var(--gray-10);
+}
+
+table.precedence td {
+    padding: 3px 0;
+    border-bottom: solid 1px var(--gray-10);
+}
+
+/*
+Sourced from https://github.com/microsoft/TypeScript-Website/blob/e9d8f66f6b8be2dda06737d3686dcb795749dff2/packages/typescriptlang-org/src/templates/play.scss#L916-L943.
+Licensed under the MIT license https://github.com/microsoft/TypeScript-Website/blob/e9d8f66f6b8be2dda06737d3686dcb795749dff2/LICENSE-CODE.
+*/
+#copied-popup {
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    position: fixed;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+}
+
+#copied-popup p {
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    font-size: 1.5rem;
+
+    border-radius: 1em;
+    padding: 0.5em 1.5em;
+    opacity: 0;
+
+    transition: opacity 0.1s ease-in-out;
+
+    /* Help Safari with blurred text */
+    transform: translateZ(0);
+}
+
+@media only screen and (max-width: 839px) {
+    /* 36 pixel columns.*/
+    .page { width: 720px; }
+    nav { width: 144px; }
+    .main-column, main { width: 504px; }
+}
+
+@media only screen and (max-width: 759px) {
+    /* 32 pixel columns.*/
+    .page { width: 640px; }
+    nav { width: 128px; }
+    .main-column, main { width: 448px; }
+}
+
+@media only screen and (max-width: 679px) {
+    /* 28 pixel columns.*/
+    .page { width: 560px; }
+    nav { width: 112px; }
+    .main-column, main { width: 392px; }
+
+    header h2 {
+        font-size: 12px;
+        letter-spacing: 1px;
+    }
+}
+
+@media only screen and (max-width: 639px) {
+    .page { width: 100%; }
+    .buttons { margin-right: 1em; }
+    #try-result { margin-right: 1.5em; }
+
+    /* Switch to the mobile navigation.*/
+    nav.big { display: none; }
+    nav.small { display: block; }
+    nav.small div:not(table) { padding-left: 1em; }
+
+    .main-column, main {
+        padding: 0 20px;
+        width: 100%;
+    }
+
+    header h1 {
+        position: relative;
+        top: 10px;
+        left: 0;
+        text-align: center;
+    }
+
+    header h2 {
+        position: relative;
+        top: 0;
+        right: 0;
+        text-align: center;
+        font-size: 13px;
+        letter-spacing: 2px;
+    }
+
+    main {
+        float: none;
+        width: 100%;
+    }
+
+    pre {
+        font-size: 13px;
+    }
+
+    footer {
+        padding: 20px 20px 40px 20px;
+    }
+}

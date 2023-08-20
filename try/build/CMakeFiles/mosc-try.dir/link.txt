@@ -1,0 +1,1 @@
+/Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/emcc -Wall -Wextra -O3  -s WASM=1 -s FILESYSTEM=0 -s EXIT_RUNTIME=0 -s ENVIRONMENT='web' -s EXPORTED_FUNCTIONS="['_main', '_mosc_compile']" -s EXTRA_EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap']" @CMakeFiles/mosc-try.dir/objects1.rsp -o mosc-try.html @CMakeFiles/mosc-try.dir/linkLibs.rsp

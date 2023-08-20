@@ -20,8 +20,13 @@
 {{- $styles := resources.Get "book.scss" | resources.ExecuteAsTemplate "book.scss" . | resources.ToCSS | resources.Minify | resources.Fingerprint }}
 <link rel="stylesheet" href="{{ $styles.RelPermalink }}" {{ template "integrity" $styles }}>
 
-<script defer src="{{ "prism/prism.js" | relURL }}"></script>
+<script  src="{{ "prism/prism.js" | relURL }}"></script>
+<script  src="{{ "codejar.js" | relURL }}"></script>
+<script  src="{{ "codejar-linenumbers.js" | relURL }}"></script>
+<script src="{{ "prism/prism.js" | relURL }}"></script>
+<script  src="{{ "mosc.js" | relURL }}"></script>
 <link rel="stylesheet" href="{{ "prism/prism.css" | relURL }}">
+<link rel="stylesheet" href="{{ "mosc.css" | relURL }}">
 
 {{- if default true .Site.Params.BookSearch -}}
   {{- $searchJSFile := printf "%s.search.js" .Language.Lang }}

@@ -38,7 +38,7 @@ enableGitInfo = true
 # [[menu.before]]
 [[menu.after]]
   name = "Github"
-  url = "https://github.com/molobala/mosc"
+  url = "https://github.com/mosclang/mosc"
   weight = 10
 
 [[menu.after]]

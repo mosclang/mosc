@@ -1,0 +1,4 @@
+/Users/doumbia0804/CLionProjects/mosc/try/build/CMakeFiles/mosc.dir
+/Users/doumbia0804/CLionProjects/mosc/try/build/CMakeFiles/mosc-try.dir
+/Users/doumbia0804/CLionProjects/mosc/try/build/CMakeFiles/edit_cache.dir
+/Users/doumbia0804/CLionProjects/mosc/try/build/CMakeFiles/rebuild_cache.dir

@@ -1,0 +1,36 @@
+CMakeFiles/mosc.dir/Users/doumbia0804/CLionProjects/mosc/src/runtime/debuger.c.o: \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/debuger.c \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/debuger.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../memory/Value.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/lib/clang/17/include/stdint.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/stdint.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/bits/stdint.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../memory/../common/constants.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../memory/../helpers/Helper.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/compat/stdlib.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/stdlib.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/features.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/alloca.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../memory/../helpers/../api/msc.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/stdio.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/wasi/api.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/lib/clang/17/include/stddef.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/lib/clang/17/include/stdbool.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../memory/../common/common.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../memory/../api/msc.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/memory.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/compat/string.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/string.h \
+  /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/strings.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/MVM.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../memory/GC.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../memory/../memory/Value.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../compiler/Compiler.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../compiler/../memory/Value.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../compiler/../common/opcodes.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../compiler/../common/codes.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../builtin/Core.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../builtin/../memory/Value.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../api/msc.h \
+  /Users/doumbia0804/CLionProjects/mosc/src/runtime/../common/opcodes.h

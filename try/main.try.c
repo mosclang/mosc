@@ -4,7 +4,7 @@
 
 #include "../src/api/msc.h"
 
-
+static MVM* vm = NULL;
 
 static void print(MVM *_, const char *text) {
     printf("%s", text);
@@ -32,22 +32,25 @@ static const char *readSource(const char *name) {
 }
 
 
-int main() {
-    // printf("%zu, %zu", sizeof(Djuru),sizeof(Class));
-    const char *text = readSource("../test/examples/import.msc");
-    if(text == NULL) {
-        printf("Failed to read file");
-        return 0;
-    }
+static MVM* initVM() {
 
     MSCConfig config;
     MSCInitConfig(&config);
     config.errorHandler = errorPrint;
     config.writeFn = print;
 
-    MVM *vm = MSCNewVM(&config);
-    MSCInterpret(vm, "script", text);
+   return MSCNewVM(&config);
+}
+
+//The endpoint we call from the browser
+int mosc_compile(const char* input) {
+    MVM* vm = initVM();
+    MSCInterpretResult result = MSCInterpret(vm, "compile", input);
     MSCFreeVM(vm);
-    free((void *) text);
+    return (int)result;
+}
+
+//Main not used, but required. We call mosc_compile directly.
+int main(int argc, const char* argv[]) {
     return 0;
 }
