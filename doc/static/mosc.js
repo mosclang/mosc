@@ -1,7 +1,9 @@
+import {CodeJar} from '/codejar.js'
+
 window.onload = function() {
     var blocks = document.querySelectorAll('pre.snippet')
     blocks.forEach((element) => {
-        var lang = 'lua'
+        var lang = 'mosc'
         var input_lang = element.getAttribute('data-lang')
         if(input_lang) lang = input_lang
         var code = document.createElement('code');
