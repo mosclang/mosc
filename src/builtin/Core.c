@@ -360,7 +360,8 @@ DEF_PRIMITIVE(list_iterate) {
 
     // Stop if we're out of bounds.
     double index = AS_NUM(args[1]);
-    if (index < 0 || index >= list->elements.count - 1) RETURN_FALSE;
+    // double absIndex = step > 0 ? index: -index;
+    if ((step > 0 && (index < 0 || index >= list->elements.count - 1)) || (step < 0 && (index < 1 || index > list->elements.count - 1))) RETURN_FALSE;
 
     // Otherwise, move to the next index.
     RETURN_NUM(index + step);
@@ -370,7 +371,6 @@ DEF_PRIMITIVE(list_iteratorValue) {
     List *list = AS_LIST(args[0]);
     uint32_t index = validateIndex(vm, args[1], (uint32_t) list->elements.count, "Iterator");
     if (index == UINT32_MAX) return false;
-
     RETURN_VAL(list->elements.data[index]);
 }
 
