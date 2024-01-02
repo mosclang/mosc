@@ -27,7 +27,7 @@ typedef enum {
     PREC_NONE,
     PREC_LOWEST,
     PREC_ASSIGNMENT,    // =
-    PREC_NULLISH,   // ??
+    PREC_NULLISH,       // ??
     PREC_LOGICAL_OR,    // ||
     PREC_LOGICAL_AND,   // &&
     PREC_EQUALITY,      // == !=
@@ -1396,7 +1396,7 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
     Pattern ret;
     ret.alias = NULL;
     ret.parent = parent;
-    if (match(compiler, ID_TOKEN)) {
+    if (match(compiler, ID_TOKEN) || match(compiler, STRING_CONST_TOKEN)) {
         ret.type = NONE_PATTERN;
         initToken(&ret.as.id, compiler->parser->previous.type, compiler->parser->previous.start,
                   compiler->parser->previous.length,
@@ -1415,7 +1415,6 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
                 newVariable(&ret.variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
                 initVariable(compiler, &ret.variable);
             }
-
         } else if (declare) {
             int symbol = declareVariable(compiler, &ret.as.id);
 
@@ -1439,12 +1438,29 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
         MSCInitPatternBuffer(&ret.as.object);
         do {
             if (peek(compiler) == RBRACE_TOKEN) break;
+            if (match(compiler, LBRACKET_TOKEN)) {
+
+                // possible key expression
+                int symbol = declareVariable(compiler, &ret.as.id);
+                newVariable(&ret.alias->variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
+                // initVariable(compiler, &ret.variable);
+                expression(compiler);
+                consume(compiler, RBRACKET_TOKEN, "Expected ']' after object key expression");
+                consume(compiler, COLON_TOKEN, "Expected ':' after object key expression");
+                // parse the alias
+                Pattern alias = parsePattern(compiler, NONE_PATTERN, declare);
+                ret.alias = ALLOCATE(compiler->parser->vm, Pattern);
+                memcpy(ret.alias, &alias, sizeof(Pattern));
+
+                continue;
+            }
             Pattern pattern = parsePattern(compiler, ret.type, declare);
             MSCWritePatternBuffer(compiler->parser->vm, &ret.as.object, pattern);
             if (pattern.type == REST_PATTERN) break;
         } while (match(compiler, COMMA_TOKEN));
         consume(compiler, RBRACE_TOKEN, "Expected '}' after object pattern");
     } else if (match(compiler, LBRACKET_TOKEN)) {
+
         ret.type = ARRAY_PATTERN;
         MSCInitPatternBuffer(&ret.as.array);
         do {
@@ -1454,6 +1470,8 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
             if (pattern.type == REST_PATTERN) break;
         } while (match(compiler, COMMA_TOKEN));
         consume(compiler, RBRACKET_TOKEN, "Expected ']' after array pattern");
+
+
     }
     return ret;
 }
@@ -1532,7 +1550,8 @@ void handleDestructuration(Compiler *compiler, Pattern *pattern) {
                 // load source
                 Pattern item = elements.data[i];
                 Token *sourceToken = &item.as.id;
-                Value str = MSCStringFromCharsWithLength(compiler->parser->vm, sourceToken->start, sourceToken->length);
+                Value str = sourceToken->type == STRING_CONST_TOKEN ? sourceToken->value : MSCStringFromCharsWithLength(
+                        compiler->parser->vm, sourceToken->start, sourceToken->length);
 
 
 
@@ -1964,7 +1983,7 @@ static void forStatement(Compiler *compiler) {
     // parse the step and direction
     bool up;
     if (peek(compiler) == UP_TOKEN || peek(compiler) == DOWN_TOKEN) {
-        up = match(compiler, UP_TOKEN) || !match(compiler, DOWN_TOKEN);
+        up = !match(compiler, DOWN_TOKEN);
         match(compiler, WITH_TOKEN) ? expression(compiler) : emitConstant(compiler, NUM_VAL(1));
         if (!up) callMethod(compiler, 0, "-", 1);
     } else {
@@ -2917,7 +2936,7 @@ static void call(Compiler *compiler, bool canAssign) {
     Token token = compiler->parser->previous;
     ignoreNewlines(compiler);
 
-    if(token.type == NULLCHECK_TOKEN) {
+    if (token.type == NULLCHECK_TOKEN) {
         // add a check first
         emitOp(compiler, OP_LOAD_ON);
         null(compiler, false);

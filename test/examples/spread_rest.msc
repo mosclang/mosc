@@ -1,7 +1,7 @@
 
 
 nin a = {togo: "Molo", djamou: "DOUMBIA", dugu: "Molobala", "faa": "Boua"}
-nin {togo, djamou, ...rest} = a
+nin {"dugu": togo, djamou, ...rest} = a
 nin [folo, [{fila:filanan}]] = ["Folo", [{fila: "Filapp", "ss": "sss"}, "Saba"]]
 nin b = {sen: "Bien", ...a}
 A.yira(a)
@@ -32,6 +32,11 @@ seginka [["Madou", "Marako"], ["Bamako", "Mali"]] kono [a1, a2] {
     A.yira("${a1}: ${a2}");
 }
 
-seginka [{sii: 12, togo: "Bourama"}, {sii: 22, togo: "Madou"}, {sii: 24, togo: "Issa"}] kono {sii: a1, togo: a2} {
+seginka [{sii: 12, togo: "Bourama"}, {sii: 22, togo: "Madou"}, {sii: 24, togo: "Issa"}] kono {"sii": a1, "togo": a2} {
     A.yira("${a1}: ${a2}");
+}
+
+nin col = [1, 2, 3, 4, 5]
+seginka col kono item kaj {
+    A.yira(item)
 }
