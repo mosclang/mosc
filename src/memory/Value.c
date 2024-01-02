@@ -763,7 +763,7 @@ void MSCBlackenMap(Map *map, MVM *vm) {
 
 
 bool insertEntries(MapEntry *entries, uint32_t capacitry, Value key, Value value) {
-    ASSERT(map->entries != NULL, "Should ensure capacity before inserting.");
+    ASSERT(entries != NULL, "Should ensure capacity before inserting.");
 
     MapEntry *entry;
     if (findEntry(entries, capacitry, key, &entry)) {

@@ -294,8 +294,6 @@ typedef struct {
 
 typedef struct {
     bool isStatic;
-    // The method function itself. The [type] determines which field of the union
-    // is used.
     Value defaultValue;
 } Field;
 
