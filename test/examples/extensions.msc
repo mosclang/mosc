@@ -12,3 +12,6 @@ tii test(fn) {
 A.yira([].also {it =>
     it.aBeeFaraAkan([12, 34, 44])
 })
+test(Tii.kura { name, age =>
+ segin niin "$name: $age"
+})

@@ -306,7 +306,7 @@ void MSCFinalizeExtern(MVM *vm, Extern *externObj) {
 
     ASSERT(method->type == METHOD_EXTERN, "Finalizer should be foreign.");
 
-    MSCFinalizerFn finalizer = (MSCFinalizerFn)method->as.foreign;
+    MSCFinalizerFn finalizer = (MSCFinalizerFn) method->as.foreign;
     finalizer(externObj->data);
 }
 
@@ -668,18 +668,20 @@ static void createExtern(MVM *vm, Djuru *djuru, Value *stack) {
 
     vm->apiStack = NULL;
 }
-static Method* findExtensionMethod(MVM *vm, Class* classObj, int symbol) {
-    if(classObj == NULL) {
+
+static Method *findExtensionMethod(MVM *vm, Class *classObj, int symbol) {
+    if (classObj == NULL) {
         return NULL;
     }
-    Method* ret = &classObj->methods.data[symbol];
-    if(ret->type!= METHOD_BLOCK) {
+    Method *ret = &classObj->methods.data[symbol];
+    if (ret->type != METHOD_BLOCK) {
         ret = findExtensionMethod(vm, classObj->superclass, symbol);
-        if(ret->type == METHOD_BLOCK) {
+        if (ret != NULL && ret->type == METHOD_BLOCK) {
             // bind to the superclass for next call if needed
             MSCBindMethod(classObj->superclass, vm, symbol, *ret);
+            return ret;
         }
-        return ret;
+        return NULL;
     } else {
         MSCBindMethod(classObj, vm, symbol, *ret);
         return ret;
@@ -989,7 +991,8 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
             completeCall:
             // If the class's method table doesn't include the symbol, bail.
             if (method == NULL && ((symbol >= classObj->methods.count ||
-                                   (method = &classObj->methods.data[symbol])->type == METHOD_NONE) && !(method = findExtensionMethod(vm, classObj, symbol)))) {
+                                    (method = &classObj->methods.data[symbol])->type == METHOD_NONE) &&
+                                   !(method = findExtensionMethod(vm, classObj, symbol)))) {
                 methodNotFound(vm, classObj, symbol);
                 RUNTIME_ERROR();
             }
