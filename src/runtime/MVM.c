@@ -668,12 +668,22 @@ static void createExtern(MVM *vm, Djuru *djuru, Value *stack) {
 
     vm->apiStack = NULL;
 }
-static Method* findExtensionMethod(Class* classObj, int symbol) {
+static Method* findExtensionMethod(MVM *vm, Class* classObj, int symbol) {
     if(classObj == NULL) {
         return NULL;
     }
     Method* ret = &classObj->methods.data[symbol];
-    return ret->type!= METHOD_BLOCK ? findExtensionMethod(classObj->superclass, symbol) : ret;
+    if(ret->type!= METHOD_BLOCK) {
+        ret = findExtensionMethod(vm, classObj->superclass, symbol);
+        if(ret->type == METHOD_BLOCK) {
+            // bind to the superclass for next call if needed
+            MSCBindMethod(classObj->superclass, vm, symbol, *ret);
+        }
+        return ret;
+    } else {
+        MSCBindMethod(classObj, vm, symbol, *ret);
+        return ret;
+    }
 }
 
 static Value importModule(MVM *vm, Value name) {
@@ -979,7 +989,7 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
             completeCall:
             // If the class's method table doesn't include the symbol, bail.
             if (method == NULL && ((symbol >= classObj->methods.count ||
-                                   (method = &classObj->methods.data[symbol])->type == METHOD_NONE) && !(method = findExtensionMethod(classObj, symbol)))) {
+                                   (method = &classObj->methods.data[symbol])->type == METHOD_NONE) && !(method = findExtensionMethod(vm, classObj, symbol)))) {
                 methodNotFound(vm, classObj, symbol);
                 RUNTIME_ERROR();
             }
