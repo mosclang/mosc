@@ -34,7 +34,7 @@ static const char *readSource(const char *name) {
 
 int main() {
     // printf("%zu, %zu", sizeof(Djuru),sizeof(Class));
-    const char *text = readSource("../test/examples/import.msc");
+    const char *text = readSource("../test/examples/extensions.msc");
     if(text == NULL) {
         printf("Failed to read file");
         return 0;

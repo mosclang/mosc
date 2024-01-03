@@ -1,0 +1,11 @@
+tii Baa.also(fn) {
+    fn.weele(ale)
+    segin niin ale
+}
+tii Baa.let(fn) {
+    segin niin fn.weele(ale)
+}
+
+A.yira([].also {(it) =>
+    it.aBeeFaraAkan([12, 34, 44])
+})

@@ -15,6 +15,7 @@
 #if MSC_OPT_KUNFE
 
 #include "../meta/Kunfe.h"
+#include "../memory/Value.h"
 
 #endif
 
@@ -544,12 +545,13 @@ static void bindMethod(MVM *vm, int methodType, int symbol,
     } else {
         method.as.closure = AS_CLOSURE(methodValue);
         method.type = METHOD_BLOCK;
-        if (methodType != OP_METHOD_STATIC)
+        if (methodType != OP_METHOD_STATIC) {
             //printf("Will bind class method %s %s: ::: %p:: %p -- %p\n", method.as.closure->fn->debug->name, className,
             //      classObj, classObj->superclass,
             //     core->objectClass);
             // Patch up the bytecode now that we know the superclass.
             MSCBindMethodCode(classObj, method.as.closure->fn);
+        }
     }
 
     MSCBindMethod(classObj, vm, symbol, method);
@@ -666,7 +668,13 @@ static void createExtern(MVM *vm, Djuru *djuru, Value *stack) {
 
     vm->apiStack = NULL;
 }
-
+static Method* findExtensionMethod(Class* classObj, int symbol) {
+    if(classObj == NULL) {
+        return NULL;
+    }
+    Method* ret = &classObj->methods.data[symbol];
+    return ret->type!= METHOD_BLOCK ? findExtensionMethod(classObj->superclass, symbol) : ret;
+}
 
 static Value importModule(MVM *vm, Value name) {
     name = resolveModule(vm, name);
@@ -970,8 +978,8 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
 
             completeCall:
             // If the class's method table doesn't include the symbol, bail.
-            if (method == NULL && (symbol >= classObj->methods.count ||
-                                   (method = &classObj->methods.data[symbol])->type == METHOD_NONE)) {
+            if (method == NULL && ((symbol >= classObj->methods.count ||
+                                   (method = &classObj->methods.data[symbol])->type == METHOD_NONE) && !(method = findExtensionMethod(classObj, symbol)))) {
                 methodNotFound(vm, classObj, symbol);
                 RUNTIME_ERROR();
             }
