@@ -2574,9 +2574,13 @@ void methodCall(Compiler *compiler, Opcode instruction,
         Signature fnSignature = {"", 0, SIG_FUNCTION, 0};
 
         // Parse the parameter list, if any.
-        if (match(compiler, LPAREN_TOKEN)) {
+        bool hasParen = match(compiler, LPAREN_TOKEN);
+        bool hasParam = hasParen || (peek(compiler) == ID_TOKEN &&
+                                                          (peekNext(compiler) == COMMA_TOKEN ||
+                                                           peekNext(compiler) == ARROW_TOKEN));
+        if (hasParam) {
             finishParameterList(&fnCompiler, &fnSignature);
-            consume(compiler, RPAREN_TOKEN, "Expect ')' after function parameters.");
+            if(hasParen) consume(compiler, RPAREN_TOKEN, "Expect ')' after function parameters.");
             consume(compiler, ARROW_TOKEN, "Expect '=>' after function parameters.");
         }
 
@@ -2967,7 +2971,7 @@ static void functionCall(Compiler *compiler, bool canAssign) {
 
     // Parse the argument list.
     ignoreNewlines(compiler);
-    // Allow empty an argument list.
+    // Allow empty argument list.
     if (peek(compiler) != RPAREN_TOKEN) {
         finishArgumentList(compiler, &signature);
     }
@@ -2986,9 +2990,14 @@ static void functionCall(Compiler *compiler, bool canAssign) {
         Signature fnSignature = {"", 0, SIG_FUNCTION, 0};
 
         // Parse the parameter list, if any.
-        if (match(compiler, LPAREN_TOKEN)) {
+        // Parse the parameter list, if any.
+        bool hasParen = match(compiler, LPAREN_TOKEN);
+        bool hasParam = hasParen || (peek(compiler) == ID_TOKEN &&
+                                     (peekNext(compiler) == COMMA_TOKEN ||
+                                      peekNext(compiler) == ARROW_TOKEN));
+        if (hasParam) {
             finishParameterList(&fnCompiler, &fnSignature);
-            consume(compiler, RPAREN_TOKEN, "Expect ')' after function parameters.");
+            if(hasParen) consume(compiler, RPAREN_TOKEN, "Expect ')' after function parameters.");
             consume(compiler, ARROW_TOKEN, "Expect '=>' after function parameters.");
         }
 
@@ -3025,9 +3034,14 @@ static void lambdaCall(Compiler *compiler, bool canAssign) {
     Signature fnSignature = {"", 0, SIG_FUNCTION, 0};
 
     // Parse the parameter list, if any.
-    if (match(compiler, LPAREN_TOKEN)) {
+    // Parse the parameter list, if any.
+    bool hasParen = match(compiler, LPAREN_TOKEN);
+    bool hasParam = hasParen || (peek(compiler) == ID_TOKEN &&
+                                 (peekNext(compiler) == COMMA_TOKEN ||
+                                  peekNext(compiler) == ARROW_TOKEN));
+    if (hasParam) {
         finishParameterList(&fnCompiler, &fnSignature);
-        consume(compiler, RPAREN_TOKEN, "Expect ')' after function parameters.");
+        if(hasParen) consume(compiler, RPAREN_TOKEN, "Expect ')' after function parameters.");
         consume(compiler, ARROW_TOKEN, "Expect '=>' after function parameters.");
     }
 

@@ -5,7 +5,10 @@ tii Baa.also(fn) {
 tii Baa.let(fn) {
     segin niin fn.weele(ale)
 }
+tii test(fn) {
+    segin niin fn.weele("molo", 12)
+}
 
-A.yira([].also {(it) =>
+A.yira([].also {it =>
     it.aBeeFaraAkan([12, 34, 44])
 })
