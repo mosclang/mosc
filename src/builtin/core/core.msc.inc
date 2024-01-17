@@ -518,6 +518,6 @@ static const char* coreModuleSource =
 "    ale._attributes = attributes\n"
 "    ale._methods = methods\n"
 "  }\n"
-"  sebenma { \"ladaw: ${ale._attributes} methods: ${ale._methods}\" }\n"
+"  sebenma { \"yere: ${ale._attributes} tiidenw: ${ale._methods}\" }\n"
 "}\n"
 "\n";

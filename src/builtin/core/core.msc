@@ -516,6 +516,6 @@ kulu KuluLadaw {
     ale._attributes = attributes
     ale._methods = methods
   }
-  sebenma { "ladaw: ${ale._attributes} methods: ${ale._methods}" }
+  sebenma { "yere: ${ale._attributes} tiidenw: ${ale._methods}" }
 }
 
