@@ -1,0 +1,13 @@
+@!test=tien
+@!swagger(class=Walan)
+kulu WalanDen {
+    dilan kura() {}
+    @!case
+    useCase {}
+    useCase=(v) {
+    }
+}
+
+nin item = WalanDen.kura();
+A.yira(item.suku.ladaw.yere)
+A.yira(item.suku.ladaw.tiidenw)

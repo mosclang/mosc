@@ -632,6 +632,10 @@ void nextToken(Parser *parser) {
                 skipLineComment(parser);
                 break;
             }
+            case '@': {
+                makeToken(parser, AT_TOKEN);
+                return;
+            }
             case '^':
                 makeToken(parser, BT_XOR_TOKEN);
                 return;

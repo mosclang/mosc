@@ -311,7 +311,7 @@ struct sClass {
     int numFields;
     Class *superclass;
     String *name;
-
+    Value attributes;
 };
 
 Class *MSCSingleClass(MVM *vm, int numFields, String *name);

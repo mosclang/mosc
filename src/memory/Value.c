@@ -184,6 +184,7 @@ Class *MSCSingleClass(MVM *vm, int numFields, String *name) {
     classObj->superclass = NULL;
     classObj->numFields = numFields;
     classObj->name = name;
+    classObj->attributes = NULL_VAL;
 
     MSCPushRoot(vm->gc, (Object *) classObj);
     MSCInitMethodBuffer(&classObj->methods);
@@ -241,6 +242,8 @@ void MSCBlackenClass(Class *thisClass, MVM *vm) {
     }
 
     MSCGrayObject((Object *) thisClass->name, vm);
+
+    if(!IS_NULL(thisClass->attributes)) MSCGrayObject(AS_OBJ(thisClass->attributes), vm);
 
     // Keep track of how much memory is still in use.
     vm->gc->bytesAllocated += sizeof(Class);
@@ -301,7 +304,7 @@ void MSCInitClass(Class *thisClass, MVM *vm, String *name, int numOfFields) {
     thisClass->name = name;
     thisClass->superclass = NULL;
     thisClass->name = name;
-    // thisClass->attributes = NULL_VAL;
+    thisClass->attributes = NULL_VAL;
 
     MSCPushRoot(vm->gc, (Object *) thisClass);
     MSCInitMethodBuffer(&thisClass->methods);

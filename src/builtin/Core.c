@@ -46,6 +46,10 @@ DEF_PRIMITIVE(class_toString) {
     RETURN_OBJ(AS_CLASS(args[0])->name);
 }
 
+DEF_PRIMITIVE(class_attributes) {
+    RETURN_VAL(AS_CLASS(args[0])->attributes);
+}
+
 
 DEF_PRIMITIVE(djuru_new) {
     if (!validateFn(vm, args[1], "Argument")) return false;
@@ -1259,6 +1263,7 @@ void load(MVM *vm) {
     PRIMITIVE(vm->core.classClass, "togo", class_name);
     PRIMITIVE(vm->core.classClass, "fakulu", class_supertype);
     PRIMITIVE(vm->core.classClass, "sebenma", class_toString);
+    PRIMITIVE(vm->core.classClass, "ladaw", class_attributes);
 
 
     // Finally, we can define Object's metaclass which is a subclass of Class.

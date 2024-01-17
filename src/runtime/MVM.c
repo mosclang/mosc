@@ -384,8 +384,8 @@ static void endClass(MVM *vm) {
     // Remove the stack items
     vm->djuru->stackTop -= 2;
 
-    // Class *classObj = AS_CLASS(classValue);
-    //classObj->attributes = attributes;
+    Class *classObj = AS_CLASS(classValue);
+    classObj->attributes = attributes;
 }
 
 // Verifies that [superclassValue] is a valid object to inherit from. That

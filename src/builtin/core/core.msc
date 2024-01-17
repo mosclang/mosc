@@ -506,3 +506,16 @@ kulu WalaValueTugun ye Tugun {
   iteratorValue(iterator) { ale._map.valueIteratorValue_(iterator) }
 }
 
+kulu KuluLadaw {
+
+  nin _attributes
+  nin _methods
+  yere { ale._attributes }
+  tiidenw { ale._methods }
+  dilan kura(attributes, methods) {
+    ale._attributes = attributes
+    ale._methods = methods
+  }
+  sebenma { "ladaw: ${ale._attributes} methods: ${ale._methods}" }
+}
+
