@@ -3488,11 +3488,12 @@ static bool matchAttribute(Compiler *compiler) {
                     Value key = group;
                     Value value = NULL_VAL;
                     if (runtimeAccess) addToAttributeGroup(compiler, NULL_VAL, key, value);
-                } else if (isLiteral(compiler) && peekNext(compiler) == RPAREN_TOKEN) {
+                } else if (isLiteral(compiler) && peekNext(compiler) != ASSIGN_TOKEN) {
                     Value key = group;
                     Value value = consumeLiteral(compiler,
                                                  "Expect a Bool, Num, String or Identifier literal for an attribute value.");
-                    consume(compiler, ID_TOKEN, "Expect ) after attribute value.");
+                    ignoreNewlines(compiler);
+                    consume(compiler, RPAREN_TOKEN, "Expect ) after attribute value.");
                     if (runtimeAccess) addToAttributeGroup(compiler, NULL_VAL, key, value);
                 } else {
                     while (peek(compiler) != RPAREN_TOKEN) {

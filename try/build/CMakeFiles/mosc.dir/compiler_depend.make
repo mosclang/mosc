@@ -90,7 +90,6 @@ CMakeFiles/mosc.dir/Users/doumbia0804/CLionProjects/mosc/src/builtin/Primitive.c
 CMakeFiles/mosc.dir/Users/doumbia0804/CLionProjects/mosc/src/compiler/Compiler.c.o: /Users/doumbia0804/CLionProjects/mosc/src/compiler/Compiler.c \
   /Users/doumbia0804/CLionProjects/mosc/src/common/codes.h \
   /Users/doumbia0804/CLionProjects/mosc/src/common/opcodes.h \
-  /Users/doumbia0804/CLionProjects/mosc/src/helpers/Helper.h \
   /Users/doumbia0804/CLionProjects/mosc/src/api/msc.h \
   /Users/doumbia0804/CLionProjects/mosc/src/common/common.h \
   /Users/doumbia0804/CLionProjects/mosc/src/common/constants.h \
@@ -105,7 +104,6 @@ CMakeFiles/mosc.dir/Users/doumbia0804/CLionProjects/mosc/src/compiler/Compiler.c
   /Users/doumbia0804/CLionProjects/mosc/src/memory/GC.h \
   /Users/doumbia0804/CLionProjects/mosc/src/memory/Value.h \
   /Users/doumbia0804/CLionProjects/mosc/src/runtime/MVM.h \
-  /Users/doumbia0804/CLionProjects/mosc/src/runtime/debuger.h \
   /Users/doumbia0804/CLionProjects/mosc/src/compiler/Compiler.h \
   /Users/doumbia0804/CLionProjects/mosc/src/compiler/Parser.h \
   /Users/doumbia0804/CLionProjects/mosc/src/compiler/Token.h \

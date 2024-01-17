@@ -3,6 +3,10 @@
 kulu WalanDen {
     dilan kura() {}
     @!case
+    @!skip(tien)
+    @!skip(
+        "Will skip this test"
+    )
     useCase {}
     useCase=(v) {
     }

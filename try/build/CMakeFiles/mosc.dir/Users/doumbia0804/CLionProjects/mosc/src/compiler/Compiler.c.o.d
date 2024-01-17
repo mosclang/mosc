@@ -33,8 +33,6 @@ CMakeFiles/mosc.dir/Users/doumbia0804/CLionProjects/mosc/src/compiler/Compiler.c
   /Users/doumbia0804/CLionProjects/mosc/src/compiler/../runtime/../builtin/Core.h \
   /Users/doumbia0804/CLionProjects/mosc/src/compiler/../runtime/../builtin/../memory/Value.h \
   /Users/doumbia0804/CLionProjects/mosc/src/compiler/../runtime/../api/msc.h \
-  /Users/doumbia0804/CLionProjects/mosc/src/compiler/../runtime/debuger.h \
-  /Users/doumbia0804/CLionProjects/mosc/src/compiler/../helpers/Helper.h \
   /Users/doumbia0804/CLionProjects/mosc/src/compiler/Parser.h \
   /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/emscripten/cache/sysroot/include/compat/stdarg.h \
   /Users/doumbia0804/Documents/2023/Labs/emsdk/upstream/lib/clang/17/include/stdarg.h \
