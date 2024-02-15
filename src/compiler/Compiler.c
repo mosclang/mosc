@@ -7,6 +7,7 @@
 #include "../runtime/MVM.h"
 
 #include "Parser.h"
+#include "../memory/Value.h"
 
 
 // The stack effect of each opcode. The index in the array is the opcode, and
@@ -278,6 +279,8 @@ struct Compiler {
 };
 
 // Forward declarations
+void classDefinition(Compiler *compiler, bool isExtern);
+
 static void disallowAttributes(Compiler *compiler);
 
 static void addToAttributeGroup(Compiler *compiler, Value group, Value key, Value value);
@@ -585,7 +588,6 @@ Function *endCompiler(Compiler *compiler, const char *debugName, int debugNameLe
     // Mark the end of the bytecode. Since it may contain multiple early returns,
     // we can't rely on OP_RETURN to tell us we're at the end.
     emitOp(compiler, OP_END);
-
     MSCFunctionBindName(compiler->function, compiler->parser->vm, debugName, debugNameLength);
 
     // In the function that contains this one, load the resulting function object.
@@ -1839,6 +1841,7 @@ static void functionDefinition(Compiler *compiler, bool isStatic) {
 
     consume(compiler, LBRACE_TOKEN, "Expect '{' to begin function body.");
     finishBody(&functionCompiler);
+    functionCompiler.function->arity = signature.arity;
     endCompiler(&functionCompiler, fullSignature, length);
 
 
@@ -2407,10 +2410,10 @@ static bool staticField(Compiler *compiler, bool canAssign, bool declaring, Vari
     Variable variable = resolveName(compiler, token->start, token->length);
     bareName(compiler, true, variable);
     // if not private static field, expose a get and setter for the field
-    if (!isPrivate(token->start, token->length)) {
+    /*if (!isPrivate(token->start, token->length)) {
         emitSetter(compiler, classVariable, variable.index, token->start, token->length, true);
         emitGetter(compiler, classVariable, variable.index, token->start, token->length, true);
-    }
+    }*/
     return true;
 }
 
@@ -2808,11 +2811,7 @@ static void name(Compiler *compiler, bool canAssign) {
     if (next == DOT_TOKEN) {
         compiler->dotSource = token->type;
     }
-    /*if (next == LPAREN_TOKEN || next == LBRACKET_TOKEN || next == LBRACE_TOKEN) {
-        // method call
-        printf("Call next:: %s", compiler->parser->currentChar);
-        namedCall(compiler,false, OP_CALL_0);
-    }*/
+
     Variable variable = resolveNonmodule(compiler, token->start, token->length);
     if (variable.index != -1) {
         bareName(compiler, canAssign, variable);
@@ -2968,7 +2967,6 @@ static void call(Compiler *compiler, bool canAssign) {
         int ifJump = emitJump(compiler, OP_OR);
 
         consume(compiler, ID_TOKEN, "Expect method or attribute name after '.'.");
-        // printf(":::(%.*s)\n", compiler->parser->previous.length, compiler->parser->previous.start);
         // emitByte(compiler, OP_POP);
         namedCall(compiler, canAssign, OP_CALL_0);
 
@@ -2981,7 +2979,6 @@ static void call(Compiler *compiler, bool canAssign) {
 
     }
     consume(compiler, ID_TOKEN, "Expect method or attribute name after '.'.");
-    // printf(":::(%.*s)\n", compiler->parser->previous.length, compiler->parser->previous.start);
     namedCall(compiler, canAssign, OP_CALL_0);
 }
 
@@ -3239,7 +3236,6 @@ void namedSignature(Compiler *compiler, Signature *signature) {
     if (maybeSetter(compiler, signature)) return;
     // Regular named function with an optional parameter list.
     parameterList(compiler, signature);
-
 }
 
 // Compiles a method signature for a constructor.
@@ -3563,6 +3559,7 @@ static bool method(Compiler *compiler, Variable *classVariable, bool isStatic, b
 
     // Compile the method signature.
     signatureFn(&methodCompiler, &signature);
+
     methodCompiler.isInitializer = signature.type == SIG_INITIALIZER;
 
     if (isStatic && signature.type == SIG_INITIALIZER) {
@@ -3598,7 +3595,7 @@ static bool method(Compiler *compiler, Variable *classVariable, bool isStatic, b
                 "Expect '{' to begin method body.");
 
         finishBody(&methodCompiler);
-
+        methodCompiler.function->arity = signature.arity;
         endCompiler(&methodCompiler, fullSignature, length);
     }
 
@@ -3803,8 +3800,6 @@ static bool definition(Compiler *compiler, bool expr) {
 int whenBranch(Compiler *compiler) {
     ignoreNewlines(compiler);
     TokenType currentToken = peek(compiler);
-    // printf("Cur:: %d\n", currentToken);
-    // nextToken(compiler->parser);
     GrammarFn infix = rules[currentToken].infix;
     if (infix != NULL) {
         nextToken(compiler->parser);
@@ -3889,9 +3884,6 @@ static void whenExpression(Compiler *compiler, bool canAssign) {
     emitByteArg(compiler, OP_STORE_LOCAL, discriminant);
     emitByte(compiler, OP_POP);
     softPopScope(compiler);
-    // printf("RetSlot %d\n", retSlot);
-    //MSCDumpCode(compiler->parser->vm, compiler->function);
-    //popScope(compiler);
 
 }
 

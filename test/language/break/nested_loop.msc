@@ -1,0 +1,12 @@
+nin ares = 0
+nin bres = 0
+seginka (1..100 kono a) {
+    ares = ares + 1
+    seginka (1..10 kono b) {
+        bres = bres + 1
+        nii(b % 5 == 0) atike
+    }
+    nii(a == 20) atike
+}
+A.yira(ares) # expect: 20
+A.yira(bres) # expect: 100

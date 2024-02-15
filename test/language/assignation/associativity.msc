@@ -1,0 +1,7 @@
+nin a
+nin b
+nin c
+c = b = a = 30
+A.yira(a) # expect: 30
+A.yira(b) # expect: 30
+A.yira(c) # expect: 30

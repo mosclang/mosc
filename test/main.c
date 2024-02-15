@@ -2,52 +2,44 @@
 // Created by Mahamadou DOUMBIA [OML DSI] on 03/02/2022.
 //
 
+
+#include "utils.h"
+#include "api/api_tests.h"
 #include "../src/api/msc.h"
+#include "../src/runtime/MVM.h"
+
+static MVM *vm = NULL;
 
 
-
-static void print(MVM *_, const char *text) {
-    printf("%s", text);
-}
-
-static bool errorPrint(MVM *vm, MSCError type, const char *module_name, int line, const char *message) {
-    printf("Error at %s > %d: %s\n", module_name, line, message);
-    return true;
-}
-
-static const char *readSource(const char *name) {
-    FILE *file = fopen(name, "r");
-    const char *buffer = NULL;
-    if (file) {
-        fseek(file, 0, SEEK_END);
-        long size = ftell(file);
-        fseek (file, 0, SEEK_SET);
-        buffer = malloc((size_t) size);
-        if (buffer) {
-            fread((void *) buffer, 1, (size_t) size, file);
-        }
-        fclose(file);
-    }
-    return buffer;
-}
-
-
-int main() {
+int main(int argc, const char* argv[]) {
     // printf("%zu, %zu", sizeof(Djuru),sizeof(Class));
-    const char *text = readSource("../test/core/attributes/class_attributes.msc");
-    if(text == NULL) {
-        printf("Failed to read file");
-        return 0;
-    }
+    int handled = tryHandlingArgs(argc, argv);
+    if(handled) return handled;
 
+    const char *test = argv[1];
+
+    bool apiTest = isModuleAnAPITest(test);
     MSCConfig config;
     MSCInitConfig(&config);
     config.errorHandler = errorPrint;
     config.writeFn = print;
+    config.loadModuleFn = loadModule;
+    config.resolveModuleFn = resolveModule;
+    config.initialHeapSize = 1024 * 1024 * 100;
+    if(apiTest) {
+        config.bindExternClassFn = apiTestBindForeignClass;
+        config.bindExternMethodFn = apiTestBindForeignMethod;
+    }
 
-    MVM *vm = MSCNewVM(&config);
-    MSCInterpret(vm, "script", text);
+    vm = MSCNewVM(&config);
+    MSCInterpretResult result = runFile(vm, test);
+    int exitCode = 0;
+    if(apiTest) {
+        exitCode = runAPITests(vm, test);
+    }
     MSCFreeVM(vm);
-    free((void *) text);
-    return 0;
+    if(result == RESULT_COMPILATION_ERROR) return MSC_TERR_COMPILATION;
+    if(result == RESULT_RUNTIME_ERROR) return MSC_TERR_SOFTWARE;
+
+    return exitCode;
 }

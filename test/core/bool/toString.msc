@@ -1,0 +1,2 @@
+A.yira(tien.sebenma) # expect: tien
+A.yira(galon.sebenma) # expect: galon

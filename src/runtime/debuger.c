@@ -5,6 +5,7 @@
 #include "debuger.h"
 #include "MVM.h"
 #include "../common/opcodes.h"
+#include "../memory/Value.h"
 
 
 static int dumpInstruction(MVM *vm, Function *fn, int i, int *lastLine) {
@@ -312,6 +313,9 @@ void MSCDebugPrintStackTrace(MVM *vm) {
 
     for (int i = fiber->numOfFrames - 1; i >= 0; i--) {
         CallFrame *frame = &fiber->frames[i];
+        if(frame->closure == NULL) {
+            continue;
+        }
         Function *fn = frame->closure->fn;
 
         // Skip over stub functions for calling methods from the C API.
@@ -319,7 +323,7 @@ void MSCDebugPrintStackTrace(MVM *vm) {
 
         // The built-in core module has no name. We explicitly omit it from stack
         // traces since we don't want to highlight to a user the implementation
-        // detail of what part of the core module is written in C and what is MSC.
+        // detail of what part of the core module is written in C and what is MOSC.
         if (fn->module->name == NULL) continue;
 
         // -1 because IP has advanced past the instruction that it just executed.
@@ -440,8 +444,8 @@ static int disassembleInstruction(Chunk* chunk, int offset) {
 */
 
 void MSCDumpStack(Djuru *fiber) {
-    printf("(fiber %p) ", fiber);
-    for (Value *slot = fiber->stack; slot < fiber->stackTop; slot++) {
+    printf("(djuru %p):%d.%lu - %lu ", fiber, fiber->numOfFrames, (unsigned long)fiber->stackStart, (unsigned long)fiber->stackTop);
+    for (Value *slot = fiber->stackStart; slot < fiber->stackTop; slot++) {
         MSCDumpValue(*slot);
         printf(" | ");
     }

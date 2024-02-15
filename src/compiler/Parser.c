@@ -6,6 +6,16 @@
 #include "../runtime/MVM.h"
 #include <errno.h>
 
+#define PARSE_NUMBER(checker, separator)                                                                      \
+    while (true) {                                                                                                  \
+        char c = peekChar(parser);                                                                                      \
+        char nc = peekNextChar(parser);                                                                                 \
+        if(checker(c) != -1 || (c == (separator) && (checker(nc) != -1 || nc == (separator) ))) nextChar(parser);     \
+        else break;                                                                                                     \
+    }                                                                                                               \
+
+
+
 static Keyword keywords[] =
         {
                 {"dilan",   5, INIT_TOKEN},
@@ -102,8 +112,8 @@ static bool isName(char c) {
 }
 
 // Returns true if [c] is a digit.
-static bool isDigit(char c) {
-    return c >= '0' && c <= '9';
+static int isDigit(char c) {
+    return c >= '0' && c <= '9' ? 1 : -1;
 }
 
 // Returns the current character the parser is sitting on.
@@ -226,11 +236,19 @@ static int readOctalDigit(Parser *parser) {
 // Parses the numeric value of the current token.
 static void makeNumber(Parser *parser, int base) {
     errno = 0;
-
+    char tmp[parser->currentChar - parser->tokenStart];
+    int index = 0;
+    for (char *it = (char *) parser->tokenStart; it < parser->currentChar; it++) {
+        char c = *it;
+        if (c != '_') {
+            tmp[index++] = *it;
+        }
+    }
+    tmp[index] = '\0';
     if (base != 10) {
-        parser->next.value = NUM_VAL((double) strtoll(parser->tokenStart, NULL, base));
+        parser->next.value = NUM_VAL((double) strtoll(tmp, NULL, base));
     } else {
-        parser->next.value = NUM_VAL(strtod(parser->tokenStart, NULL));
+        parser->next.value = NUM_VAL(strtod(tmp, NULL));
     }
 
     if (errno == ERANGE) {
@@ -277,13 +295,13 @@ static void readOctalNumber(Parser *parser) {
 
 // Finishes lexing a number literal.
 static void readNumber(Parser *parser) {
-    while (isDigit(peekChar(parser))) nextChar(parser);
+    PARSE_NUMBER(isDigit, '_');
 
     // See if it has a floating point. Make sure there is a digit after the "."
     // so we don't get confused by method calls on number literals.
-    if (peekChar(parser) == '.' && isDigit(peekNextChar(parser))) {
+    if (peekChar(parser) == '.' && isDigit(peekNextChar(parser)) != -1) {
         nextChar(parser);
-        while (isDigit(peekChar(parser))) nextChar(parser);
+        PARSE_NUMBER(isDigit, '_');
     }
 
     // See if the number is in scientific notation.
@@ -293,11 +311,11 @@ static void readNumber(Parser *parser) {
             matchChar(parser, '-');
         }
 
-        if (!isDigit(peekChar(parser))) {
+        if (isDigit(peekChar(parser)) == -1) {
             lexError(parser, "Unterminated scientific notation.");
         }
 
-        while (isDigit(peekChar(parser))) nextChar(parser);
+        PARSE_NUMBER(isDigit, '_');
     }
     makeNumber(parser, 10);
 }
@@ -308,7 +326,7 @@ static void readName(Parser *parser, TokenType type, char firstChar) {
     MSCInitByteBuffer(&string);
     MSCWriteByteBuffer(parser->vm, &string, (uint8_t) firstChar);
 
-    while (isName(peekChar(parser)) || isDigit(peekChar(parser))) {
+    while (isName(peekChar(parser)) || isDigit(peekChar(parser)) != -1) {
         char c = nextChar(parser);
         MSCWriteByteBuffer(parser->vm, &string, (uint8_t) c);
     }
@@ -566,7 +584,7 @@ void nextToken(Parser *parser) {
 
         char c = nextChar(parser);
         if (parser->interpolating) {
-            if (!isName(c) && !isDigit(c)) {
+            if (!isName(c) && isDigit(c) == -1) {
                 parser->interpolating = false;
                 parser->currentChar--;
                 readString(parser);
@@ -666,11 +684,11 @@ void nextToken(Parser *parser) {
                 twoCharToken(parser, '=', NEQUAL_TOKEN, NOT_TOKEN);
                 return;
             case '?':
-                if(matchChar(parser, '?')) {
+                if (matchChar(parser, '?')) {
                     makeToken(parser, NULLISH_TOKEN);
                     return;
                 }
-                if(matchChar(parser, '.')) {
+                if (matchChar(parser, '.')) {
                     makeToken(parser, NULLCHECK_TOKEN);
                     return;
                 }
@@ -748,7 +766,7 @@ void nextToken(Parser *parser) {
             default:
                 if (isName(c)) {
                     readName(parser, ID_TOKEN, c);
-                } else if (isDigit(c)) {
+                } else if (isDigit(c) != -1) {
                     readNumber(parser);
                 } else {
                     if (c >= 32 && c <= 126) {

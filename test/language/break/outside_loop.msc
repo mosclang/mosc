@@ -1,0 +1,3 @@
+tii test() {
+    break # expect error
+}

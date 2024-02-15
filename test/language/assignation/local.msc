@@ -1,0 +1,5 @@
+tii test() {
+ nin a = 30
+ A.yira(a) # expect: 30
+}
+test()

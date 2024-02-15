@@ -5,7 +5,6 @@
 #include "Core.h"
 #include "Primitive.h"
 #include "../runtime/MVM.h"
-#include "../runtime/debuger.h"
 #include "core/core.msc.inc"
 #include "../memory/Value.h"
 
@@ -22,6 +21,7 @@ DEF_PRIMITIVE(bool_not) {
 }
 
 DEF_PRIMITIVE(bool_toString) {
+    MVM* vm = djuru->vm;
     if (AS_BOOL(args[0])) {
         RETURN_VAL(CONST_STRING(vm, "tien"));
     } else {
@@ -52,18 +52,18 @@ DEF_PRIMITIVE(class_attributes) {
 
 
 DEF_PRIMITIVE(djuru_new) {
-    if (!validateFn(vm, args[1], "Argument")) return false;
+    if (!validateFn(djuru, args[1], "Argument")) return false;
 
     Closure *closure = AS_CLOSURE(args[1]);
     if (closure->fn->arity > 1) {
         RETURN_ERROR("Function cannot take more than one parameter.");
     }
 
-    RETURN_OBJ(MSCDjuruFrom(vm, closure));
+    RETURN_OBJ(MSCDjuruFrom(djuru->vm, closure));
 }
 
 DEF_PRIMITIVE(djuru_abort) {
-    vm->djuru->error = args[1];
+    djuru->error = args[1];
 
     // If the error is explicitly null, it's not really an abort.
     return IS_NULL(args[1]);
@@ -76,7 +76,7 @@ DEF_PRIMITIVE(djuru_abort) {
 //
 // [hasValue] is true if a value in [args] is being passed to the new djuru.
 // Otherwise, `null` is implicitly being passed.
-static bool runDjuru(MVM *vm, Djuru *djuru, const Value *args, bool isCall,
+static bool runDjuru(Djuru *current, Djuru *djuru, const Value *args, bool isCall,
                      bool hasValue, const char *verb) {
 
     if (MSCHasError(djuru)) {
@@ -93,7 +93,7 @@ static bool runDjuru(MVM *vm, Djuru *djuru, const Value *args, bool isCall,
         if (djuru->state == DJURU_ROOT) RETURN_ERROR("Cannot call root djuru.");
 
         // Remember who ran it.
-        djuru->caller = vm->djuru;
+        djuru->caller = current;
     }
 
     if (djuru->numOfFrames == 0) {
@@ -103,7 +103,7 @@ static bool runDjuru(MVM *vm, Djuru *djuru, const Value *args, bool isCall,
     // When the calling djuru resumes, we'll store the result of the call in its
     // stack. If the call has two arguments (the djuru and the value), we only
     // need one slot for the result, so discard the other slot now.
-    if (hasValue) vm->djuru->stackTop--;
+    if (hasValue) current->stackTop--;
 
     if (djuru->numOfFrames == 1 &&
         djuru->frames[0].ip == djuru->frames[0].closure->fn->code.data) {
@@ -118,20 +118,20 @@ static bool runDjuru(MVM *vm, Djuru *djuru, const Value *args, bool isCall,
         djuru->stackTop[-1] = hasValue ? args[1] : NULL_VAL;
     }
 
-    vm->djuru = djuru;
+    current->vm->djuru = djuru;
     return false;
 }
 
 DEF_PRIMITIVE(djuru_call) {
-    return runDjuru(vm, AS_DJURU(args[0]), args, true, false, "call");
+    return runDjuru(djuru, AS_DJURU(args[0]), args, true, false, "call");
 }
 
 DEF_PRIMITIVE(djuru_call1) {
-    return runDjuru(vm, AS_DJURU(args[0]), args, true, true, "call");
+    return runDjuru(djuru, AS_DJURU(args[0]), args, true, true, "call");
 }
 
 DEF_PRIMITIVE(djuru_current) {
-    RETURN_OBJ(vm->djuru);
+    RETURN_OBJ(djuru);
 }
 
 DEF_PRIMITIVE(djuru_error) {
@@ -145,81 +145,80 @@ DEF_PRIMITIVE(djuru_isDone) {
 
 DEF_PRIMITIVE(djuru_suspend) {
     // Switching to a null djuru tells the interpreter to stop and exit.
-    vm->djuru = NULL;
-    vm->apiStack = NULL;
+    djuru->vm->djuru = NULL;
     return false;
 }
 
 DEF_PRIMITIVE(djuru_transfer) {
-    return runDjuru(vm, AS_DJURU(args[0]), args, false, false, "transfer to");
+    return runDjuru(djuru, AS_DJURU(args[0]), args, false, false, "transfer to");
 }
 
 DEF_PRIMITIVE(djuru_transfer1) {
-    return runDjuru(vm, AS_DJURU(args[0]), args, false, true, "transfer to");
+    return runDjuru(djuru, AS_DJURU(args[0]), args, false, true, "transfer to");
 }
 
 DEF_PRIMITIVE(djuru_transferError) {
-    runDjuru(vm, AS_DJURU(args[0]), args, false, true, "transfer to");
-    vm->djuru->error = args[1];
+    runDjuru(djuru, AS_DJURU(args[0]), args, false, true, "transfer to");
+    djuru->vm->djuru->error = args[1];
     return false;
 }
 
 DEF_PRIMITIVE(djuru_try) {
-    runDjuru(vm, AS_DJURU(args[0]), args, true, false, "try");
+    runDjuru(djuru, AS_DJURU(args[0]), args, true, false, "try");
 
     // If we're switching to a valid djuru to try, remember that we're trying it.
-    if (!MSCHasError(vm->djuru)) vm->djuru->state = DJURU_TRY;
+    if (!MSCHasError(djuru->vm->djuru)) djuru->vm->djuru->state = DJURU_TRY;
     return false;
 }
 
 DEF_PRIMITIVE(djuru_try1) {
-    runDjuru(vm, AS_DJURU(args[0]), args, true, true, "try");
+    runDjuru(djuru, AS_DJURU(args[0]), args, true, true, "try");
 
     // If we're switching to a valid djuru to try, remember that we're trying it.
-    if (!MSCHasError(vm->djuru)) vm->djuru->state = DJURU_TRY;
+    if (!MSCHasError(djuru->vm->djuru)) djuru->vm->djuru->state = DJURU_TRY;
     return false;
 }
 
 DEF_PRIMITIVE(djuru_yield) {
-    Djuru *current = vm->djuru;
-    vm->djuru = current->caller;
+    Djuru *caller = djuru->caller;
+    djuru->vm->djuru = caller;
 
     // Unhook this djuru from the one that called it.
-    current->caller = NULL;
-    current->state = DJURU_OTHER;
+    djuru->caller = NULL;
+    djuru->state = DJURU_OTHER;
 
-    if (vm->djuru != NULL) {
+    if (caller != NULL) {
         // Make the caller's run method return null.
-        vm->djuru->stackTop[-1] = NULL_VAL;
+        caller->stackTop[-1] = NULL_VAL;
     }
 
     return false;
 }
 
 DEF_PRIMITIVE(djuru_yield1) {
-    Djuru *current = vm->djuru;
-    vm->djuru = current->caller;
+    Djuru *caller = djuru->caller;
+    djuru->vm->djuru = caller;
 
     // Unhook this djuru from the one that called it.
-    current->caller = NULL;
-    current->state = DJURU_OTHER;
+    djuru->caller = NULL;
+    djuru->state = DJURU_OTHER;
 
-    if (vm->djuru != NULL) {
+    if (caller != NULL) {
         // Make the caller's run method return the argument passed to yield.
-        vm->djuru->stackTop[-1] = args[1];
+        caller->stackTop[-1] = args[1];
 
         // When the yielding djuru resumes, we'll store the result of the yield
         // call in its stack. Since Djuru.segin(value) has two arguments (the Djuru
         // class and the value) and we only need one slot for the result, discard
         // the other slot now.
-        current->stackTop--;
+        djuru->stackTop--;
     }
 
     return false;
 }
 
 DEF_PRIMITIVE(fn_new) {
-    if (!validateFn(vm, args[1], "Argument")) return false;
+    if (!validateFn(djuru, args[1], "Argument")) return false;
 
     // The block argument is already a function, so just return it.
     RETURN_VAL(args[1]);
@@ -229,15 +228,15 @@ DEF_PRIMITIVE(fn_arity) {
     RETURN_NUM(AS_CLOSURE(args[0])->fn->arity);
 }
 
-static void call_fn(MVM *vm, const Value *args, int numArgs) {
+static void call_fn(Djuru *djuru, const Value *args, int numArgs) {
     // +1 to include the function itself.
-    callFunction(vm, vm->djuru, AS_CLOSURE(args[0]), numArgs + 1);
+    callFunction(djuru, AS_CLOSURE(args[0]), numArgs + 1);
 }
 
 #define DEF_FN_CALL(numArgs)                                                   \
     DEF_PRIMITIVE(fn_call##numArgs)                                            \
     {                                                                          \
-      call_fn(vm, args, numArgs);                                              \
+      call_fn(djuru, args, numArgs);                                              \
       return false;                                                            \
     }
 
@@ -276,16 +275,16 @@ DEF_FN_CALL(15)
 DEF_FN_CALL(16)
 
 DEF_PRIMITIVE(fn_toString) {
-    RETURN_VAL(CONST_STRING(vm, "<tii>"));
+    RETURN_VAL(CONST_STRING(djuru, "<tii>"));
 }
 
 // Creates a new list of size args[1], with all elements initialized to args[2].
 DEF_PRIMITIVE(list_filled) {
-    if (!validateInt(vm, args[1], "Size")) return false;
+    if (!validateInt(djuru, args[1], "Size")) return false;
     if (AS_NUM(args[1]) < 0) RETURN_ERROR("Size cannot be negative.");
 
     uint32_t size = (uint32_t) AS_NUM(args[1]);
-    List *list = MSCListFrom(vm, size);
+    List *list = MSCListFrom(djuru->vm, size);
 
     for (uint32_t i = 0; i < size; i++) {
         list->elements.data[i] = args[2];
@@ -295,11 +294,11 @@ DEF_PRIMITIVE(list_filled) {
 }
 
 DEF_PRIMITIVE(list_new) {
-    RETURN_OBJ(MSCListFrom(vm, 0));
+    RETURN_OBJ(MSCListFrom(djuru->vm, 0));
 }
 
 DEF_PRIMITIVE(list_add) {
-    MSCWriteValueBuffer(vm, &AS_LIST(args[0])->elements, args[1]);
+    MSCWriteValueBuffer(djuru->vm, &AS_LIST(args[0])->elements, args[1]);
     RETURN_VAL(args[1]);
 }
 
@@ -307,7 +306,7 @@ DEF_PRIMITIVE(list_add) {
 // by the compiler when compiling list literals instead of using add() to
 // minimize stack churn.
 DEF_PRIMITIVE(list_addCore) {
-    MSCWriteValueBuffer(vm, &AS_LIST(args[0])->elements, args[1]);
+    MSCWriteValueBuffer(djuru->vm, &AS_LIST(args[0])->elements, args[1]);
 
     // Return the list.
     RETURN_VAL(args[0]);
@@ -320,14 +319,14 @@ DEF_PRIMITIVE(list_addAllCore) {
     if (!IS_LIST(args[1])) RETURN_ERROR("Spread element should be a list instance");
     List *other = AS_LIST(args[1]);
     for (int i = 0; i < other->elements.count; i++) {
-        MSCWriteValueBuffer(vm, &AS_LIST(args[0])->elements, other->elements.data[i]);
+        MSCWriteValueBuffer(djuru->vm, &AS_LIST(args[0])->elements, other->elements.data[i]);
     }
     // Return the list.
     RETURN_VAL(args[0]);
 }
 
 DEF_PRIMITIVE(list_clear) {
-    MSCFreeValueBuffer(vm, &AS_LIST(args[0])->elements);
+    MSCFreeValueBuffer(djuru->vm, &AS_LIST(args[0])->elements);
     RETURN_NULL;
 }
 
@@ -339,16 +338,16 @@ DEF_PRIMITIVE(list_insert) {
     List *list = AS_LIST(args[0]);
 
     // count + 1 here so you can "insert" at the very end.
-    uint32_t index = validateIndex(vm, args[1], (uint32_t) list->elements.count + 1, "Index");
+    uint32_t index = validateIndex(djuru, args[1], (uint32_t) list->elements.count + 1, "Index");
     if (index == UINT32_MAX) return false;
 
-    MSCListInsert(list, vm, args[2], index);
+    MSCListInsert(list, djuru->vm, args[2], index);
     RETURN_VAL(args[2]);
 }
 
 DEF_PRIMITIVE(list_iterate) {
     List *list = AS_LIST(args[0]);
-    if (!validateInt(vm, args[2], "Step")) return false;
+    if (!validateInt(djuru, args[2], "Step")) return false;
     int32_t step = (int32_t) AS_NUM(args[2]);
 
     // If we're starting the iteration, return the first index.
@@ -360,7 +359,7 @@ DEF_PRIMITIVE(list_iterate) {
             RETURN_NUM(list->elements.count - 1);
     }
 
-    if (!validateInt(vm, args[1], "Iterator")) return false;
+    if (!validateInt(djuru, args[1], "Iterator")) return false;
 
     // Stop if we're out of bounds.
     double index = AS_NUM(args[1]);
@@ -373,36 +372,36 @@ DEF_PRIMITIVE(list_iterate) {
 
 DEF_PRIMITIVE(list_iteratorValue) {
     List *list = AS_LIST(args[0]);
-    uint32_t index = validateIndex(vm, args[1], (uint32_t) list->elements.count, "Iterator");
+    uint32_t index = validateIndex(djuru, args[1], (uint32_t) list->elements.count, "Iterator");
     if (index == UINT32_MAX) return false;
     RETURN_VAL(list->elements.data[index]);
 }
 
 DEF_PRIMITIVE(list_removeAt) {
     List *list = AS_LIST(args[0]);
-    uint32_t index = validateIndex(vm, args[1], (uint32_t) list->elements.count, "Index");
+    uint32_t index = validateIndex(djuru, args[1], (uint32_t) list->elements.count, "Index");
     if (index == UINT32_MAX) return false;
 
-    RETURN_VAL(MSCListRemoveAt(list, vm, index));
+    RETURN_VAL(MSCListRemoveAt(list, djuru->vm, index));
 }
 
 DEF_PRIMITIVE(list_removeValue) {
     List *list = AS_LIST(args[0]);
-    int index = MSCListIndexOf(list, vm, args[1]);
+    int index = MSCListIndexOf(list, djuru->vm, args[1]);
     if (index == -1) RETURN_NULL;
-    RETURN_VAL(MSCListRemoveAt(list, vm, index));
+    RETURN_VAL(MSCListRemoveAt(list, djuru->vm, index));
 }
 
 DEF_PRIMITIVE(list_indexOf) {
     List *list = AS_LIST(args[0]);
-    RETURN_NUM(MSCListIndexOf(list, vm, args[1]));
+    RETURN_NUM(MSCListIndexOf(list, djuru->vm, args[1]));
 }
 
 DEF_PRIMITIVE(list_swap) {
     List *list = AS_LIST(args[0]);
-    uint32_t indexA = validateIndex(vm, args[1], (uint32_t) list->elements.count, "Index 0");
+    uint32_t indexA = validateIndex(djuru, args[1], (uint32_t) list->elements.count, "Index 0");
     if (indexA == UINT32_MAX) return false;
-    uint32_t indexB = validateIndex(vm, args[2], (uint32_t) list->elements.count, "Index 1");
+    uint32_t indexB = validateIndex(djuru, args[2], (uint32_t) list->elements.count, "Index 1");
     if (indexB == UINT32_MAX) return false;
 
     Value a = list->elements.data[indexA];
@@ -416,7 +415,7 @@ DEF_PRIMITIVE(list_subscript) {
     List *list = AS_LIST(args[0]);
 
     if (IS_NUM(args[1])) {
-        uint32_t index = validateIndex(vm, args[1], (uint32_t) list->elements.count,
+        uint32_t index = validateIndex(djuru, args[1], (uint32_t) list->elements.count,
                                        "Subscript");
         if (index == UINT32_MAX) return false;
 
@@ -428,10 +427,10 @@ DEF_PRIMITIVE(list_subscript) {
 
     int step;
     uint32_t count = (uint32_t) list->elements.count;
-    uint32_t start = calculateRange(vm, AS_RANGE(args[1]), &count, &step);
+    uint32_t start = calculateRange(djuru, AS_RANGE(args[1]), &count, &step);
     if (start == UINT32_MAX) return false;
 
-    List *result = MSCListFrom(vm, count);
+    List *result = MSCListFrom(djuru->vm, count);
     for (uint32_t i = 0; i < count; i++) {
         result->elements.data[i] = list->elements.data[start + i * step];
     }
@@ -441,7 +440,7 @@ DEF_PRIMITIVE(list_subscript) {
 
 DEF_PRIMITIVE(list_subscriptSetter) {
     List *list = AS_LIST(args[0]);
-    uint32_t index = validateIndex(vm, args[1], (uint32_t) (list->elements.count),
+    uint32_t index = validateIndex(djuru, args[1], (uint32_t) (list->elements.count),
                                    "Subscript");
     if (index == UINT32_MAX) return false;
 
@@ -450,11 +449,11 @@ DEF_PRIMITIVE(list_subscriptSetter) {
 }
 
 DEF_PRIMITIVE(map_new) {
-    RETURN_OBJ(MSCMapFrom(vm));
+    RETURN_OBJ(MSCMapFrom(djuru->vm));
 }
 
 DEF_PRIMITIVE(map_subscript) {
-    if (!validateKey(vm, args[1])) return false;
+    if (!validateKey(djuru, args[1])) return false;
 
     Map *map = AS_MAP(args[0]);
     Value value = MSCMapGet(map, args[1]);
@@ -464,9 +463,9 @@ DEF_PRIMITIVE(map_subscript) {
 }
 
 DEF_PRIMITIVE(map_subscriptSetter) {
-    if (!validateKey(vm, args[1])) return false;
+    if (!validateKey(djuru, args[1])) return false;
 
-    MSCMapSet(AS_MAP(args[0]), vm, args[1], args[2]);
+    MSCMapSet(AS_MAP(args[0]), djuru->vm, args[1], args[2]);
     RETURN_VAL(args[2]);
 }
 
@@ -474,9 +473,9 @@ DEF_PRIMITIVE(map_subscriptSetter) {
 // the compiler when compiling map literals instead of using [_]=(_) to
 // minimize stack churn.
 DEF_PRIMITIVE(map_addCore) {
-    if (!validateKey(vm, args[1])) return false;
+    if (!validateKey(djuru, args[1])) return false;
 
-    MSCMapSet(AS_MAP(args[0]), vm, args[1], args[2]);
+    MSCMapSet(AS_MAP(args[0]), djuru->vm, args[1], args[2]);
 
     // Return the map itself.
     RETURN_VAL(args[0]);
@@ -489,18 +488,18 @@ DEF_PRIMITIVE(map_addAllCore) {
     }
     Map *other = AS_MAP(args[1]);
 
-    MSCMapAddAll(map, vm, other);
+    MSCMapAddAll(map, djuru->vm, other);
     // Return the map itself.
     RETURN_VAL(args[0]);
 }
 
 DEF_PRIMITIVE(map_clear) {
-    MSCMapClear(AS_MAP(args[0]), vm);
+    MSCMapClear(AS_MAP(args[0]), djuru->vm);
     RETURN_NULL;
 }
 
 DEF_PRIMITIVE(map_containsKey) {
-    if (!validateKey(vm, args[1])) return false;
+    if (!validateKey(djuru, args[1])) return false;
 
     RETURN_BOOL(!IS_UNDEFINED(MSCMapGet(AS_MAP(args[0]), args[1])));
 }
@@ -511,7 +510,7 @@ DEF_PRIMITIVE(map_count) {
 
 DEF_PRIMITIVE(map_iterate) {
     Map *map = AS_MAP(args[0]);
-    if (!validateInt(vm, args[2], "Step")) return false;
+    if (!validateInt(djuru, args[2], "Step")) return false;
     int32_t step = (int32_t) AS_NUM(args[2]);
 
     if (map->count == 0) RETURN_FALSE;
@@ -521,7 +520,7 @@ DEF_PRIMITIVE(map_iterate) {
 
     // Otherwise, start one past the last entry we stopped at or the first entry.
     if (!IS_NULL(args[1])) {
-        if (!validateInt(vm, args[1], "Iterator")) return false;
+        if (!validateInt(djuru, args[1], "Iterator")) return false;
 
         // if (AS_NUM(args[1]) <= 0) RETURN_FALSE;
         index = (int) AS_NUM(args[1]);
@@ -550,14 +549,14 @@ DEF_PRIMITIVE(map_iterate) {
 }
 
 DEF_PRIMITIVE(map_remove) {
-    if (!validateKey(vm, args[1])) return false;
+    if (!validateKey(djuru, args[1])) return false;
 
-    RETURN_VAL(MSCMapRemove(AS_MAP(args[0]), vm, args[1]));
+    RETURN_VAL(MSCMapRemove(AS_MAP(args[0]), djuru->vm, args[1]));
 }
 
 DEF_PRIMITIVE(map_keyIteratorValue) {
     Map *map = AS_MAP(args[0]);
-    uint32_t index = validateIndex(vm, args[1], map->capacity, "Iterator");
+    uint32_t index = validateIndex(djuru, args[1], map->capacity, "Iterator");
     if (index == UINT32_MAX) return false;
 
     MapEntry *entry = &map->entries[index];
@@ -570,7 +569,7 @@ DEF_PRIMITIVE(map_keyIteratorValue) {
 
 DEF_PRIMITIVE(map_valueIteratorValue) {
     Map *map = AS_MAP(args[0]);
-    uint32_t index = validateIndex(vm, args[1], map->capacity, "Iterator");
+    uint32_t index = validateIndex(djuru, args[1], map->capacity, "Iterator");
     if (index == UINT32_MAX) return false;
 
     MapEntry *entry = &map->entries[index];
@@ -585,11 +584,11 @@ DEF_PRIMITIVE(null_not) {
 }
 
 DEF_PRIMITIVE(null_toString) {
-    RETURN_VAL(CONST_STRING(vm, "gansan"));
+    RETURN_VAL(CONST_STRING(djuru->vm, "gansan"));
 }
 
 DEF_PRIMITIVE(num_fromString) {
-    if (!validateString(vm, args[1], "Argument")) return false;
+    if (!validateString(djuru, args[1], "Argument")) return false;
 
     String *string = AS_STRING(args[1]);
 
@@ -639,7 +638,7 @@ DEF_NUM_CONSTANT(minSafeInteger, -9007199254740991.0)
 #define DEF_NUM_INFIX(name, op, type)                                          \
     DEF_PRIMITIVE(num_##name)                                                  \
     {                                                                          \
-      if (!validateNum(vm, args[1], "Right operand")) return false;            \
+      if (!validateNum(djuru, args[1], "Right operand")) return false;            \
       RETURN_##type(AS_NUM(args[0]) op AS_NUM(args[1]));                       \
     }
 
@@ -663,7 +662,7 @@ DEF_NUM_INFIX(gte, >=, BOOL)
 #define DEF_NUM_BITWISE(name, op)                                              \
     DEF_PRIMITIVE(num_bitwise##name)                                           \
     {                                                                          \
-      if (!validateNum(vm, args[1], "Right operand")) return false;            \
+      if (!validateNum(djuru, args[1], "Right operand")) return false;            \
       uint32_t left = (uint32_t)AS_NUM(args[0]);                               \
       uint32_t right = (uint32_t)AS_NUM(args[1]);                              \
       RETURN_NUM(left op right);                                               \
@@ -721,7 +720,7 @@ DEF_NUM_FN(log2, log2)
 DEF_NUM_FN(exp, exp)
 
 DEF_PRIMITIVE(num_mod) {
-    if (!validateNum(vm, args[1], "Right operand")) return false;
+    if (!validateNum(djuru, args[1], "Right operand")) return false;
     RETURN_NUM(fmod(AS_NUM(args[0]), AS_NUM(args[1])));
 }
 
@@ -741,29 +740,29 @@ DEF_PRIMITIVE(num_bitwiseNot) {
 }
 
 DEF_PRIMITIVE(num_dotDot) {
-    if (!validateNum(vm, args[1], "Right hand side of range")) return false;
+    if (!validateNum(djuru, args[1], "Right hand side of range")) return false;
 
     double from = AS_NUM(args[0]);
     double to = AS_NUM(args[1]);
-    RETURN_VAL(MSCRangeFrom(vm, from, to, true));
+    RETURN_VAL(MSCRangeFrom(djuru->vm, from, to, true));
 }
 
 DEF_PRIMITIVE(num_dotDotDot) {
-    if (!validateNum(vm, args[1], "Right hand side of range")) return false;
+    if (!validateNum(djuru, args[1], "Right hand side of range")) return false;
 
     double from = AS_NUM(args[0]);
     double to = AS_NUM(args[1]);
-    RETURN_VAL(MSCRangeFrom(vm, from, to, false));
+    RETURN_VAL(MSCRangeFrom(djuru->vm, from, to, false));
 }
 
 DEF_PRIMITIVE(num_atan2) {
-    if (!validateNum(vm, args[1], "x value")) return false;
+    if (!validateNum(djuru, args[1], "x value")) return false;
 
     RETURN_NUM(atan2(AS_NUM(args[0]), AS_NUM(args[1])));
 }
 
 DEF_PRIMITIVE(num_min) {
-    if (!validateNum(vm, args[1], "Other value")) return false;
+    if (!validateNum(djuru, args[1], "Other value")) return false;
 
     double value = AS_NUM(args[0]);
     double other = AS_NUM(args[1]);
@@ -771,7 +770,7 @@ DEF_PRIMITIVE(num_min) {
 }
 
 DEF_PRIMITIVE(num_max) {
-    if (!validateNum(vm, args[1], "Other value")) return false;
+    if (!validateNum(djuru, args[1], "Other value")) return false;
 
     double value = AS_NUM(args[0]);
     double other = AS_NUM(args[1]);
@@ -779,8 +778,8 @@ DEF_PRIMITIVE(num_max) {
 }
 
 DEF_PRIMITIVE(num_clamp) {
-    if (!validateNum(vm, args[1], "Min value")) return false;
-    if (!validateNum(vm, args[2], "Max value")) return false;
+    if (!validateNum(djuru, args[1], "Min value")) return false;
+    if (!validateNum(djuru, args[2], "Max value")) return false;
 
     double value = AS_NUM(args[0]);
     double min = AS_NUM(args[1]);
@@ -790,7 +789,7 @@ DEF_PRIMITIVE(num_clamp) {
 }
 
 DEF_PRIMITIVE(num_pow) {
-    if (!validateNum(vm, args[1], "Power value")) return false;
+    if (!validateNum(djuru, args[1], "Power value")) return false;
 
     RETURN_NUM(pow(AS_NUM(args[0]), AS_NUM(args[1])));
 }
@@ -826,7 +825,7 @@ DEF_PRIMITIVE(num_sign) {
 }
 
 DEF_PRIMITIVE(num_toString) {
-    RETURN_VAL(MSCStringFromNum(vm, AS_NUM(args[0])));
+    RETURN_VAL(MSCStringFromNum(djuru->vm, AS_NUM(args[0])));
 }
 
 DEF_PRIMITIVE(num_truncate) {
@@ -857,7 +856,7 @@ DEF_PRIMITIVE(object_is) {
         RETURN_ERROR("Right operand must be a class.");
     }
 
-    Class *classObj = MSCGetClass(vm, args[0]);
+    Class *classObj = MSCGetClass(djuru->vm, args[0]);
     Class *baseClassObj = AS_CLASS(args[1]);
 
     // Walk the superclass chain looking for the class.
@@ -873,11 +872,11 @@ DEF_PRIMITIVE(object_is) {
 DEF_PRIMITIVE(object_toString) {
     Object *obj = AS_OBJ(args[0]);
     Value name = OBJ_VAL(obj->classObj->name);
-    RETURN_VAL(MSCStringFormatted(vm, "instance of @", name));
+    RETURN_VAL(MSCStringFormatted(djuru->vm, "instance of @", name));
 }
 
 DEF_PRIMITIVE(object_type) {
-    RETURN_OBJ(MSCGetClass(vm, args[0]));
+    RETURN_OBJ(MSCGetClass(djuru->vm, args[0]));
 }
 
 DEF_PRIMITIVE(range_from) {
@@ -904,7 +903,7 @@ DEF_PRIMITIVE(range_isInclusive) {
 
 DEF_PRIMITIVE(range_iterate) {
     Range *range = AS_RANGE(args[0]);
-    if (!validateInt(vm, args[2], "Step")) return false;
+    if (!validateInt(djuru, args[2], "Step")) return false;
     int32_t step = (int32_t) AS_NUM(args[2]);
 
     // Special case: empty range.
@@ -921,7 +920,7 @@ DEF_PRIMITIVE(range_iterate) {
         }
     }
 
-    if (!validateNum(vm, args[1], "Iterator")) return false;
+    if (!validateNum(djuru, args[1], "Iterator")) return false;
 
     double iterator = AS_NUM(args[1]);
 
@@ -949,6 +948,7 @@ DEF_PRIMITIVE(range_iteratorValue) {
 }
 
 DEF_PRIMITIVE(range_toString) {
+    MVM* vm = djuru->vm;
     Range *range = AS_RANGE(args[0]);
 
     Value from = MSCStringFromNum(vm, range->from);
@@ -967,7 +967,7 @@ DEF_PRIMITIVE(range_toString) {
 
 
 DEF_PRIMITIVE(string_fromCodePoint) {
-    if (!validateInt(vm, args[1], "Code point")) return false;
+    if (!validateInt(djuru, args[1], "Code point")) return false;
 
     int codePoint = (int) AS_NUM(args[1]);
     if (codePoint < 0) {
@@ -976,24 +976,24 @@ DEF_PRIMITIVE(string_fromCodePoint) {
         RETURN_ERROR("Code point cannot be greater than 0x10ffff.");
     }
 
-    RETURN_VAL(MSCStringFromCodePoint(vm, codePoint));
+    RETURN_VAL(MSCStringFromCodePoint(djuru->vm, codePoint));
 }
 
 DEF_PRIMITIVE(string_fromByte) {
-    if (!validateInt(vm, args[1], "Byte")) return false;
+    if (!validateInt(djuru, args[1], "Byte")) return false;
     int byte = (int) AS_NUM(args[1]);
     if (byte < 0) {
         RETURN_ERROR("Byte cannot be negative.");
     } else if (byte > 0xff) {
         RETURN_ERROR("Byte cannot be greater than 0xff.");
     }
-    RETURN_VAL(MSCStringFromByte(vm, (uint8_t) byte));
+    RETURN_VAL(MSCStringFromByte(djuru->vm, (uint8_t) byte));
 }
 
 DEF_PRIMITIVE(string_byteAt) {
     String *string = AS_STRING(args[0]);
 
-    uint32_t index = validateIndex(vm, args[1], string->length, "Index");
+    uint32_t index = validateIndex(djuru, args[1], string->length, "Index");
     if (index == UINT32_MAX) return false;
 
     RETURN_NUM((uint8_t) string->value[index]);
@@ -1006,7 +1006,7 @@ DEF_PRIMITIVE(string_byteCount) {
 DEF_PRIMITIVE(string_codePointAt) {
     String *string = AS_STRING(args[0]);
 
-    uint32_t index = validateIndex(vm, args[1], string->length, "Index");
+    uint32_t index = validateIndex(djuru, args[1], string->length, "Index");
     if (index == UINT32_MAX) return false;
 
     // If we are in the middle of a UTF-8 sequence, indicate that.
@@ -1019,7 +1019,7 @@ DEF_PRIMITIVE(string_codePointAt) {
 }
 
 DEF_PRIMITIVE(string_contains) {
-    if (!validateString(vm, args[1], "Argument")) return false;
+    if (!validateString(djuru, args[1], "Argument")) return false;
 
     String *string = AS_STRING(args[0]);
     String *search = AS_STRING(args[1]);
@@ -1028,7 +1028,7 @@ DEF_PRIMITIVE(string_contains) {
 }
 
 DEF_PRIMITIVE(string_endsWith) {
-    if (!validateString(vm, args[1], "Argument")) return false;
+    if (!validateString(djuru, args[1], "Argument")) return false;
 
     String *string = AS_STRING(args[0]);
     String *search = AS_STRING(args[1]);
@@ -1041,7 +1041,7 @@ DEF_PRIMITIVE(string_endsWith) {
 }
 
 DEF_PRIMITIVE(string_indexOf1) {
-    if (!validateString(vm, args[1], "Argument")) return false;
+    if (!validateString(djuru, args[1], "Argument")) return false;
 
     String *string = AS_STRING(args[0]);
     String *search = AS_STRING(args[1]);
@@ -1051,11 +1051,11 @@ DEF_PRIMITIVE(string_indexOf1) {
 }
 
 DEF_PRIMITIVE(string_indexOf2) {
-    if (!validateString(vm, args[1], "Argument")) return false;
+    if (!validateString(djuru, args[1], "Argument")) return false;
 
     String *string = AS_STRING(args[0]);
     String *search = AS_STRING(args[1]);
-    uint32_t start = validateIndex(vm, args[2], string->length, "Start");
+    uint32_t start = validateIndex(djuru, args[2], string->length, "Start");
     if (start == UINT32_MAX) return false;
 
     uint32_t index = MSCStringFind(string, search, start);
@@ -1064,7 +1064,7 @@ DEF_PRIMITIVE(string_indexOf2) {
 
 DEF_PRIMITIVE(string_iterate) {
     String *string = AS_STRING(args[0]);
-    if (!validateInt(vm, args[2], "Step")) return false;
+    if (!validateInt(djuru, args[2], "Step")) return false;
     int32_t step = (int32_t) AS_NUM(args[2]);
 
     // If we're starting the iteration, return the first index.
@@ -1075,7 +1075,7 @@ DEF_PRIMITIVE(string_iterate) {
             RETURN_NUM(string->length - 1);
     }
 
-    if (!validateInt(vm, args[1], "Iterator")) return false;
+    if (!validateInt(djuru, args[1], "Iterator")) return false;
 
     if (AS_NUM(args[1]) < 0) RETURN_FALSE;
     uint32_t index = (uint32_t) AS_NUM(args[1]);
@@ -1095,7 +1095,7 @@ DEF_PRIMITIVE(string_iterate) {
 
 DEF_PRIMITIVE(string_iterateByte) {
     String *string = AS_STRING(args[0]);
-    if (!validateInt(vm, args[2], "Step")) return false;
+    if (!validateInt(djuru, args[2], "Step")) return false;
     int32_t step = (int32_t) AS_NUM(args[2]);
     // If we're starting the iteration, return the first index.
     if (IS_NULL(args[1])) {
@@ -1105,7 +1105,7 @@ DEF_PRIMITIVE(string_iterateByte) {
             RETURN_NUM(string->length - 1);
     }
 
-    if (!validateInt(vm, args[1], "Iterator")) return false;
+    if (!validateInt(djuru, args[1], "Iterator")) return false;
 
     if (AS_NUM(args[1]) < 0) RETURN_FALSE;
     uint32_t index = (uint32_t) AS_NUM(args[1]);
@@ -1119,14 +1119,14 @@ DEF_PRIMITIVE(string_iterateByte) {
 
 DEF_PRIMITIVE(string_iteratorValue) {
     String *string = AS_STRING(args[0]);
-    uint32_t index = validateIndex(vm, args[1], string->length, "Iterator");
+    uint32_t index = validateIndex(djuru, args[1], string->length, "Iterator");
     if (index == UINT32_MAX) return false;
 
-    RETURN_VAL(MSCStringFromCodePointAt(string, vm, index));
+    RETURN_VAL(MSCStringFromCodePointAt(string, djuru->vm, index));
 }
 
 DEF_PRIMITIVE(string_startsWith) {
-    if (!validateString(vm, args[1], "Argument")) return false;
+    if (!validateString(djuru, args[1], "Argument")) return false;
 
     String *string = AS_STRING(args[0]);
     String *search = AS_STRING(args[1]);
@@ -1138,18 +1138,18 @@ DEF_PRIMITIVE(string_startsWith) {
 }
 
 DEF_PRIMITIVE(string_plus) {
-    if (!validateString(vm, args[1], "Right operand")) return false;
-    RETURN_VAL(MSCStringFormatted(vm, "@@", args[0], args[1]));
+    if (!validateString(djuru, args[1], "Right operand")) return false;
+    RETURN_VAL(MSCStringFormatted(djuru->vm, "@@", args[0], args[1]));
 }
 
 DEF_PRIMITIVE(string_subscript) {
     String *string = AS_STRING(args[0]);
 
     if (IS_NUM(args[1])) {
-        uint32_t index = validateIndex(vm, args[1], string->length, "Subscript");
+        uint32_t index = validateIndex(djuru, args[1], string->length, "Subscript");
         if (index == -1) return false;
 
-        RETURN_VAL(MSCStringFromCodePointAt(string, vm, index));
+        RETURN_VAL(MSCStringFromCodePointAt(string, djuru->vm, index));
     }
 
     if (!IS_RANGE(args[1])) {
@@ -1158,10 +1158,10 @@ DEF_PRIMITIVE(string_subscript) {
 
     int step;
     uint32_t count = string->length;
-    int start = calculateRange(vm, AS_RANGE(args[1]), &count, &step);
+    int start = calculateRange(djuru, AS_RANGE(args[1]), &count, &step);
     if (start == -1) return false;
 
-    RETURN_VAL(MSCStringFromRange(string, vm, start, count, step));
+    RETURN_VAL(MSCStringFromRange(string, djuru->vm, start, count, step));
 }
 
 DEF_PRIMITIVE(string_toString) {
@@ -1170,7 +1170,7 @@ DEF_PRIMITIVE(string_toString) {
 
 DEF_PRIMITIVE(string_compareTo)
 {
-    if (!validateString(vm, args[1], "Argument")) return false;
+    if (!validateString(djuru, args[1], "Argument")) return false;
 
     String* str1 = AS_STRING(args[0]);
     String* str2 = AS_STRING(args[1]);
@@ -1199,11 +1199,12 @@ DEF_PRIMITIVE(system_clock) {
 }
 
 DEF_PRIMITIVE(system_gc) {
-    MSCCollectGarbage(vm);
+    MSCCollectGarbage(djuru->vm);
     RETURN_NULL;
 }
 
 DEF_PRIMITIVE(system_writeString) {
+    MVM* vm = djuru->vm;
     if (vm->config.writeFn != NULL) {
         vm->config.writeFn(vm, AS_CSTRING(args[1]));
     }
@@ -1220,12 +1221,6 @@ Class *defineClass(MVM *vm, Module *module, const char *name) {
     Class *classObj = MSCSingleClass(vm, 0, nameString);
 
     MSCDefineVariable(vm, module, name, nameString->length, OBJ_VAL(classObj), NULL);
-    // printf("Count::::::---- %d\n", module->variableNames.count);
-    // String** ptr = module->variableNames.data;
-    // printf("Var:: [%s]\n", (*ptr)->value);
-    /*while((ptr++) < module->variableNames.data + module->variableNames.count) {
-        printf("Var:: %s", (*ptr)->value);
-    }*/
     MSCPopRoot(vm->gc);
     return classObj;
 }
@@ -1460,6 +1455,7 @@ void load(MVM *vm) {
 
     Class *systemClass = AS_CLASS(MSCFindVariable(vm, coreModule, "A"));
     PRIMITIVE(systemClass->obj.classObj, "waati()", system_clock);
+    PRIMITIVE(systemClass->obj.classObj, "waati", system_clock);
     PRIMITIVE(systemClass->obj.classObj, "gc()", system_gc);
     PRIMITIVE(systemClass->obj.classObj, "seben_(_)", system_writeString);
     /*

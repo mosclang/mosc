@@ -1,0 +1,3 @@
+nin a = "molo"
+A.yira(a) # expect: molo
+A.yira(a = "bala") # expect: bala

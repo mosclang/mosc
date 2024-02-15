@@ -1,0 +1,2 @@
+nin a = 0
+(a)=34 # expect error

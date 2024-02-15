@@ -1,0 +1,23 @@
+A.yira(tien == tien)    # expect: tien
+A.yira(tien == galon)   # expect: galon
+A.yira(galon == tien)   # expect: galon
+A.yira(galon == galon)  # expect: tien
+
+# Not equal to other types.
+A.yira(tien == 1)        # expect: galon
+A.yira(galon == 0)       # expect: galon
+A.yira(tien == "tien")   # expect: galon
+A.yira(galon == "galon") # expect: galon
+A.yira(galon == "")      # expect: galon
+
+A.yira(tien != tien)    # expect: galon
+A.yira(tien != galon)   # expect: tien
+A.yira(galon != tien)   # expect: tien
+A.yira(galon != galon)  # expect: galon
+
+# Not equal to other types.
+A.yira(tien != 1)        # expect: tien
+A.yira(galon != 0)       # expect: tien
+A.yira(tien != "tien")   # expect: tien
+A.yira(galon != "galon") # expect: tien
+A.yira(galon != "")      # expect: tien

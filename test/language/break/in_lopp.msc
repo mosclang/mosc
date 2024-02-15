@@ -1,0 +1,6 @@
+nin res = 0
+foo (res < 20) {
+    res = res + 1
+    nii(res == 10) atike
+}
+A.yira(res) # expect: 10

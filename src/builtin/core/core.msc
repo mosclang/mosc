@@ -411,11 +411,11 @@ kulu Walan ye Tugun {
     nin i = low - 1
     nin j = high + 1
     foo (tien) {
-        foo (tien) {
+        foo (i < high) {
             i = i + 1
             nii !comparer.weele(ale[i], p) atike
         }
-        foo (tien) {
+        foo (j>low) {
             j = j - 1
             nii (!comparer.weele(p, ale[j])) atike
         }

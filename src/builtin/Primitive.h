@@ -38,7 +38,7 @@
 // the actual type signature of a primitive function and makes it clear which C
 // functions are invoked as primitives.
 #define DEF_PRIMITIVE(name)                                                    \
-    static bool prim_##name(MVM* vm, Value* args)
+    static bool prim_##name(Djuru* djuru, Value* args)
 
 #define RETURN_VAL(value)                                                      \
     do                                                                         \
@@ -57,35 +57,35 @@
 #define RETURN_ERROR(msg)                                                      \
     do                                                                         \
     {                                                                          \
-      vm->djuru->error = MSCStringFromCharsWithLength(vm, msg, sizeof(msg) - 1);        \
+      djuru->error = MSCStringFromCharsWithLength(djuru->vm, msg, sizeof(msg) - 1);        \
       return false;                                                            \
     } while (false)
 
 #define RETURN_ERROR_FMT(...)                                                  \
     do                                                                         \
     {                                                                          \
-      vm->djuru->error = MSCStringFormatted(vm, __VA_ARGS__);                    \
+      djuru->error = MSCStringFormatted(djuru->vm, __VA_ARGS__);                    \
       return false;                                                            \
     } while (false)
 // Validates that [arg] is a valid object for use as a map key. Returns true if
 // it is. If not, reports an error and returns false.
 
-    bool validateKey(MVM *vm, Value arg);
+    bool validateKey(Djuru *djuru, Value arg);
     // Validates that the given [arg] is a function. Returns true if it is. If not,
 // reports an error and returns false.
-    bool validateFn(MVM* vm, Value arg, const char* argName);
+    bool validateFn(Djuru* djuru, Value arg, const char* argName);
 
 // Validates that the given [arg] is a Num. Returns true if it is. If not,
 // reports an error and returns false.
-    bool validateNum(MVM* vm, Value arg, const char* argName);
+    bool validateNum(Djuru* djuru, Value arg, const char* argName);
 
 // Validates that [value] is an integer. Returns true if it is. If not, reports
 // an error and returns false.
-    bool validateIntValue(MVM* vm, double value, const char* argName);
+    bool validateIntValue(Djuru* djuru, double value, const char* argName);
 
 // Validates that the given [arg] is an integer. Returns true if it is. If not,
 // reports an error and returns false.
-    bool validateInt(MVM* vm, Value arg, const char* argName);
+    bool validateInt(Djuru* djuru, Value arg, const char* argName);
 
 
 
@@ -93,13 +93,13 @@
 // Also allows negative indices which map backwards from the end. Returns the
 // valid positive index value. If invalid, reports an error and returns
 // `UINT32_MAX`.
-    uint32_t validateIndex(MVM* vm, Value arg, uint32_t count, const char* argName);
+    uint32_t validateIndex(Djuru* djuru, Value arg, uint32_t count, const char* argName);
 
 // Validates that the given [arg] is a String. Returns true if it is. If not,
 // reports an error and returns false.
-    bool validateString(MVM *vm, Value arg, const char *argName);
+    bool validateString(Djuru *djuru, Value arg, const char *argName);
 
-    uint32_t calculateRange(MVM* vm, Range* range, uint32_t* length,
+    uint32_t calculateRange(Djuru* djuru, Range* range, uint32_t* length,
                            int* step);
 
 

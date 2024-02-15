@@ -31,15 +31,14 @@ struct MVM {
     Module *lastModule;
     GC *gc;
     MSCHandle *handles;
-    Value *apiStack;
 
 };
 
 void MSCFinalizeExtern(MVM *vm, Extern *externObj);
 
-MSCHandle* MSCMakeHandle(MVM* vm, Value value);
+MSCHandle* MSCMakeHandle(Djuru* vm, Value value);
 
-int MSCGetMapCount(MVM *vm, int slot);
+int MSCGetMapCount(Djuru *vm, int slot);
 
 
 int MSCDefineVariable(MVM *vm, Module *module, const char *name, int nameLength, Value value, int *line);
@@ -55,7 +54,7 @@ Module *MSCGetModule(MVM *vm, Value name);
 
 Value MSCFindVariable(MVM *vm, Module *module, const char *name);
 
-Value* MSCSlotAtUnsafe(MVM* vm, int slot);
+Value* MSCSlotAtUnsafe(Djuru* vm, int slot);
 
 // Returns the class of [value].
 //
@@ -104,30 +103,36 @@ static inline Class *MSCGetClassInline(MVM *vm, Value value) {
     UNREACHABLE();
     return NULL;
 }
+// Ensures that [slot] is a valid index into the API's stack of slots.
+
+static inline void validateApiSlot(Djuru *djuru, int slot) {
+    ASSERT(slot >= 0, "Slot cannot be negative.");
+    ASSERT(slot < MSCGetSlotCount(djuru), "Not that many slots.");
+}
 
 // Pushes [closure] onto [fiber]'s callstack to invoke it. Expects [numArgs]
 // arguments (including the receiver) to be on the top of the stack already.
-static inline void callFunction(MVM *vm, Djuru *djuru,
+static inline void callFunction(Djuru *djuru,
                                 Closure *closure, int numArgs) {
-    // Grow the call frame array if needed.
-    if (djuru->numOfFrames + 1 > djuru->frameCapacity) {
-        int max = djuru->frameCapacity * 2;
-        djuru->frames = (CallFrame *) MSCReallocate(vm->gc, djuru->frames,
-                                                    sizeof(CallFrame) * djuru->frameCapacity, sizeof(CallFrame) * max);
-        djuru->frameCapacity = max;
-    }
-
     // Grow the stack if needed.
     int stackSize = (int) (djuru->stackTop - djuru->stack);
     int needed = stackSize + closure->fn->maxSlots;
-    MSCEnsureStack(djuru, vm, needed);
-
-    MSCAppendCallFrame(djuru, closure, djuru->stackTop - numArgs);
+    MSCEnsureStack(djuru, needed);
+    MSCPushCallFrame(djuru, closure, djuru->stackTop - numArgs);
 }
 
 static inline bool isFalsyValue(Value value) {
     return IS_FALSE(value) || IS_NULL(value);
 }
 
+static inline Value MSCGetSlot(Djuru* djuru, int slot) {
+    validateApiSlot(djuru, slot);
+    return djuru->stackStart[slot];
+}
+
+static inline void MSCSetSlot(Djuru* djuru, int slot, Value value) {
+    validateApiSlot(djuru, slot);
+    djuru->stackStart[slot] = value;
+}
 
 #endif //CPMSC_MVM_H

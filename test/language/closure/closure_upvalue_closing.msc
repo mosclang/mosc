@@ -1,0 +1,12 @@
+
+
+kulu Test {
+    dialen hi() {
+        nin static = 0
+        segin niin Tii.kura {
+           segin niin static = static + 1
+        }
+    }
+}
+
+A.yira(Test.hi().weele()) # expect: 1

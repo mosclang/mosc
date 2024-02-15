@@ -1,0 +1,3 @@
+nin a = 20
+nin b = 30
+a + b = 40 # expect error

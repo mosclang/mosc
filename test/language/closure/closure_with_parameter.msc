@@ -1,0 +1,9 @@
+tii test(fn) {
+    fn.weele(30)
+}
+nin a = 0
+test(Tii.kura { v =>
+    a = v
+})
+
+A.yira(a) # expect: 30

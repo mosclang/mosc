@@ -36,12 +36,12 @@
 #endif
 
 
-#define MSC_DEBUG_TRACE_GC 0
+// #define MSC_DEBUG_TRACE_GC 0
 
-#define MSC_DEBUG_TRACE_MEMORY 0
+// #define MSC_DEBUG_TRACE_MEMORY 0
 
-#define MSC_DEBUG_DUMP_COMPILED_CODE 0
-#define MSC_DEBUG_TRACE_INSTRUCTIONS 0
+// #define MSC_DEBUG_DUMP_COMPILED_CODE 0
+// #define MSC_DEBUG_TRACE_INSTRUCTIONS 0
 
 // Use the VM's allocator to allocate an object of [type].
 #define ALLOCATE(vm, type)                                                     \

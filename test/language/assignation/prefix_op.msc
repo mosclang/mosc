@@ -1,0 +1,2 @@
+nin a = 0
+!a = 30 # expect error

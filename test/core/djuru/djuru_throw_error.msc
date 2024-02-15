@@ -1,0 +1,7 @@
+nin thread = Djuru.kura {
+    Djuru.tike("Error from djuru")
+}
+
+A.yira(thread.aladie()) # expect: Error from djuru
+A.yira(thread.ok) # expect: tien
+A.yira(thread.fili) # expect: Error from djuru

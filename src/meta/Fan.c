@@ -11,17 +11,17 @@
 #include "Fan.msc.inc"
 
 
-void metaCompile(MVM *vm) {
-    const char *source = MSCGetSlotString(vm, 1);
-    bool isExpression = MSCGetSlotBool(vm, 3);
-    bool printErrors = MSCGetSlotBool(vm, 4);
+void metaCompile(Djuru *djuru) {
+    const char *source = MSCGetSlotString(djuru, 1);
+    bool isExpression = MSCGetSlotBool(djuru, 3);
+    bool printErrors = MSCGetSlotBool(djuru, 4);
 
     const char *module;
-    if (MSCGetSlotType(vm, 2) != MSC_TYPE_NULL) {
-        module = MSCGetSlotString(vm, 2);
-        if (MSCHasModule(vm, module)) {
-            MSCSetSlotString(vm, 0, "Security: Cannot compile into an existing named module.");
-            MSCAbortDjuru(vm, 0);
+    if (MSCGetSlotType(djuru, 2) != MSC_TYPE_NULL) {
+        module = MSCGetSlotString(djuru, 2);
+        if (MSCHasModule(djuru, module)) {
+            MSCSetSlotString(djuru, 0, "Security: Cannot compile into an existing named module.");
+            MSCAbortDjuru(djuru, 0);
         }
     } else {
         // TODO: Allow passing in module?
@@ -29,35 +29,34 @@ void metaCompile(MVM *vm) {
         // up the callstack assuming that the meta module has 2 levels of
         // indirection before hitting the user's code. Any change to meta may require
         // this constant to be tweaked.
-        Djuru *currentFiber = vm->djuru;
+        Djuru *currentFiber = djuru;
         Function *fn = currentFiber->frames[currentFiber->numOfFrames - 3].closure->fn;
         module = fn->module->name->value;
     }
 
-    Closure *closure = MSCCompileSource(vm, module, source,
+    Closure *closure = MSCCompileSource(djuru->vm, module, source,
                                         isExpression, printErrors);
     // Return the result. We can't use the public API for this since we have a
     // bare ObjClosure*.
     if (closure == NULL) {
-        vm->apiStack[0] = NULL_VAL;
+        MSCSetSlot(djuru, 0, NULL_VAL);
     } else {
-        vm->apiStack[0] = OBJ_VAL(closure);
+        MSCSetSlot(djuru, 0, OBJ_VAL(closure));
     }
 }
 
-void metaGetModuleVariables(MVM *vm) {
-    MSCEnsureSlots(vm, 3);
+void metaGetModuleVariables(Djuru *djuru) {
+    MSCEnsureSlots(djuru, 3);
 
-    Value moduleValue = MSCMapGet(vm->modules, vm->apiStack[1]);
+    Value moduleValue = MSCMapGet(djuru->vm->modules, MSCGetSlot(djuru, 1));
     if (IS_UNDEFINED(moduleValue)) {
-        vm->apiStack[0] = NULL_VAL;
+        MSCSetSlot(djuru, 0, NULL_VAL);
         return;
     }
 
     Module *module = AS_MODULE(moduleValue);
-    List *names = MSCListFrom(vm, module->variableNames.count);
-    vm->apiStack[0] = OBJ_VAL(names);
-
+    List *names = MSCListFrom(djuru->vm, module->variableNames.count);
+    MSCSetSlot(djuru, 0, OBJ_VAL(names));
     // Initialize the elements to null in case a collection happens when we
     // allocate the strings below.
     for (int i = 0; i < names->elements.count; i++) {

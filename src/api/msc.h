@@ -33,6 +33,7 @@
 #endif
 #endif //MSC_API
 
+typedef struct sDjuru Djuru;
 typedef struct MVM MVM;
 
 typedef struct MSCHandle MSCHandle;
@@ -41,7 +42,7 @@ typedef struct MSCHandle MSCHandle;
 typedef void *(*MSCReallocator)(void *memory, size_t newSize, void *userData);
 
 // A function callable from MSC code, but implemented in C.
-typedef void (*MSCExternMethodFn)(MVM *vm);
+typedef void (*MSCExternMethodFn)(Djuru *djuru);
 
 // A finalizer function for freeing resources owned by an instance of a foreign
 // class. Unlike most foreign methods, finalizers do not have access to the VM
@@ -202,11 +203,11 @@ MSC_API MSCHandle *MSCMakeCallHandle(MVM *vm, const char *signature);
 // signature.
 //
 // After this returns, you can access the return value from slot 0 on the stack.
-MSC_API MSCInterpretResult MSCCall(MVM *vm, MSCHandle *method);
+MSC_API MSCInterpretResult MSCCall(Djuru *djuru, MSCHandle *method);
 
 // Releases the reference stored in [handle]. After calling this, [handle] can
 // no longer be used.
-MSC_API void MSCReleaseHandle(MVM *vm, MSCHandle *handle);
+MSC_API void MSCReleaseHandle(Djuru *djuru, MSCHandle *handle);
 
 // The following functions are intended to be called from foreign methods or
 // finalizers. The interface Mosc provides to a foreign method is like a
@@ -246,7 +247,7 @@ MSC_API void MSCReleaseHandle(MVM *vm, MSCHandle *handle);
 // return, you get a very fast FFI.
 
 // Returns the number of slots available to the current foreign method.
-MSC_API int MSCGetSlotCount(MVM *vm);
+MSC_API int MSCGetSlotCount(Djuru *vm);
 
 // Ensures that the foreign method stack has at least [numSlots] available for
 // use, growing the stack if needed.
@@ -254,15 +255,15 @@ MSC_API int MSCGetSlotCount(MVM *vm);
 // Does not shrink the stack if it has more than enough slots.
 //
 // It is an error to call this from a finalizer.
-MSC_API void MSCEnsureSlots(MVM *vm, int numSlots);
+MSC_API void MSCEnsureSlots(Djuru *djuru, int numSlots);
 
 // Gets the type of the object in [slot].
-MSC_API MSCType MSCGetSlotType(MVM *vm, int slot);
+MSC_API MSCType MSCGetSlotType(Djuru *vm, int slot);
 
 // Reads a boolean value from [slot].
 //
 // It is an error to call this if the slot does not contain a boolean value.
-MSC_API bool MSCGetSlotBool(MVM *vm, int slot);
+MSC_API bool MSCGetSlotBool(Djuru *vm, int slot);
 
 // Reads a byte array from [slot].
 //
@@ -274,19 +275,19 @@ MSC_API bool MSCGetSlotBool(MVM *vm, int slot);
 // number of bytes in the array.
 //
 // It is an error to call this if the slot does not contain a string.
-MSC_API const char *MSCGetSlotBytes(MVM *vm, int slot, int *length);
+MSC_API const char *MSCGetSlotBytes(Djuru *vm, int slot, int *length);
 
 // Reads a number from [slot].
 //
 // It is an error to call this if the slot does not contain a number.
-MSC_API double MSCGetSlotDouble(MVM *vm, int slot);
+MSC_API double MSCGetSlotDouble(Djuru *vm, int slot);
 
 // Reads a foreign object from [slot] and returns a pointer to the foreign data
 // stored with it.
 //
 // It is an error to call this if the slot does not contain an instance of a
 // foreign class.
-MSC_API void *MSCGetSlotExtern(MVM *vm, int slot);
+MSC_API void *MSCGetSlotExtern(Djuru *vm, int slot);
 
 // Reads a string from [slot].
 //
@@ -295,25 +296,25 @@ MSC_API void *MSCGetSlotExtern(MVM *vm, int slot);
 // function returns, since the garbage collector may reclaim it.
 //
 // It is an error to call this if the slot does not contain a string.
-MSC_API const char *MSCGetSlotString(MVM *vm, int slot);
+MSC_API const char *MSCGetSlotString(Djuru *vm, int slot);
 
 // Creates a handle for the value stored in [slot].
 //
 // This will prevent the object that is referred to from being garbage collected
 // until the handle is released by calling [MSCReleaseHandle()].
-MSC_API MSCHandle *MSCGetSlotHandle(MVM *vm, int slot);
+MSC_API MSCHandle *MSCGetSlotHandle(Djuru *vm, int slot);
 
 // Stores the boolean [value] in [slot].
-MSC_API void MSCSetSlotBool(MVM *vm, int slot, bool value);
+MSC_API void MSCSetSlotBool(Djuru *vm, int slot, bool value);
 
 // Stores the array [length] of [bytes] in [slot].
 //
 // The bytes are copied to a new string within Mosc's heap, so you can free
 // memory used by them after this is called.
-MSC_API void MSCSetSlotBytes(MVM *vm, int slot, const char *bytes, size_t length);
+MSC_API void MSCSetSlotBytes(Djuru *vm, int slot, const char *bytes, size_t length);
 
 // Stores the numeric [value] in [slot].
-MSC_API void MSCSetSlotDouble(MVM *vm, int slot, double value);
+MSC_API void MSCSetSlotDouble(Djuru *vm, int slot, double value);
 
 // Creates a new instance of the foreign class stored in [classSlot] with [size]
 // bytes of raw storage and places the resulting object in [slot].
@@ -324,16 +325,16 @@ MSC_API void MSCSetSlotDouble(MVM *vm, int slot, double value);
 // and then the constructor will be invoked when the allocator returns.
 //
 // Returns a pointer to the foreign object's data.
-MSC_API void *MSCSetSlotNewExtern(MVM *vm, int slot, int classSlot, size_t size);
+MSC_API void *MSCSetSlotNewExtern(Djuru *vm, int slot, int classSlot, size_t size);
 
 // Stores a new empty list in [slot].
-MSC_API void MSCSetSlotNewList(MVM *vm, int slot);
+MSC_API void MSCSetSlotNewList(Djuru *vm, int slot);
 
 // Stores a new empty map in [slot].
-MSC_API void MSCSetSlotNewMap(MVM *vm, int slot);
+MSC_API void MSCSetSlotNewMap(Djuru *vm, int slot);
 
 // Stores null in [slot].
-MSC_API void MSCSetSlotNull(MVM *vm, int slot);
+MSC_API void MSCSetSlotNull(Djuru *vm, int slot);
 
 // Stores the string [text] in [slot].
 //
@@ -341,24 +342,24 @@ MSC_API void MSCSetSlotNull(MVM *vm, int slot);
 // memory used by it after this is called. The length is calculated using
 // [strlen()]. If the string may contain any null bytes in the middle, then you
 // should use [MSCSetSlotBytes()] instead.
-MSC_API void MSCSetSlotString(MVM *vm, int slot, const char *text);
+MSC_API void MSCSetSlotString(Djuru *vm, int slot, const char *text);
 
 
 // Stores the value captured in [handle] in [slot].
 //
 // This does not release the handle for the value.
-MSC_API void MSCSetSlotHandle(MVM *vm, int slot, MSCHandle *handle);
+MSC_API void MSCSetSlotHandle(Djuru *vm, int slot, MSCHandle *handle);
 
 // Returns the number of elements in the list stored in [slot].
-MSC_API int MSCGetListCount(MVM *vm, int slot);
+MSC_API int MSCGetListCount(Djuru *vm, int slot);
 
 // Reads element [index] from the list in [listSlot] and stores it in
 // [elementSlot].
-MSC_API void MSCGetListElement(MVM *vm, int listSlot, int index, int elementSlot);
+MSC_API void MSCGetListElement(Djuru *vm, int listSlot, int index, int elementSlot);
 
 // Sets the value stored at [index] in the list at [listSlot],
 // to the value from [elementSlot].
-MSC_API void MSCSetListElement(MVM *vm, int listSlot, int index, int elementSlot);
+MSC_API void MSCSetListElement(Djuru *vm, int listSlot, int index, int elementSlot);
 
 
 // Takes the value stored at [elementSlot] and inserts it into the list stored
@@ -366,45 +367,45 @@ MSC_API void MSCSetListElement(MVM *vm, int listSlot, int index, int elementSlot
 //
 // As in Mosc, negative indexes can be used to insert from the end. To append
 // an element, use `-1` for the index.
-MSC_API void MSCInsertInList(MVM *vm, int listSlot, int index, int elementSlot);
+MSC_API void MSCInsertInList(Djuru *vm, int listSlot, int index, int elementSlot);
 
 
 // Returns the number of entries in the map stored in [slot].
-MSC_API int MSCMapCount(MVM *vm, int slot);
+MSC_API int MSCMapCount(Djuru *vm, int slot);
 
 // Returns true if the key in [keySlot] is found in the map placed in [mapSlot].
-MSC_API bool MSCMapContainsKey(MVM *vm, int mapSlot, int keySlot);
+MSC_API bool MSCMapContainsKey(Djuru *vm, int mapSlot, int keySlot);
 
 // Retrieves a value with the key in [keySlot] from the map in [mapSlot] and
 // stores it in [valueSlot].
-MSC_API void MSCGetMapValue(MVM *vm, int mapSlot, int keySlot, int valueSlot);
+MSC_API void MSCGetMapValue(Djuru *vm, int mapSlot, int keySlot, int valueSlot);
 
 // Takes the value stored at [valueSlot] and inserts it into the map stored
 // at [mapSlot] with key [keySlot].
-MSC_API void MSCSetMapValue(MVM *vm, int mapSlot, int keySlot, int valueSlot);
+MSC_API void MSCSetMapValue(Djuru *vm, int mapSlot, int keySlot, int valueSlot);
 
 // Removes a value from the map in [mapSlot], with the key from [keySlot],
 // and place it in [removedValueSlot]. If not found, [removedValueSlot] is
 // set to null, the same behaviour as the Mosc Map API.
-MSC_API void MSCRemoveMapValue(MVM *vm, int mapSlot, int keySlot,
+MSC_API void MSCRemoveMapValue(Djuru *vm, int mapSlot, int keySlot,
                                int removedValueSlot);
 
 // Looks up the top level variable with [name] in resolved [module] and stores
 // it in [slot].
-MSC_API void MSCGetVariable(MVM *vm, const char *module, const char *name,
+MSC_API void MSCGetVariable(Djuru *vm, const char *module, const char *name,
                             int slot);
 
 // Looks up the top level variable with [name] in resolved [module],
 // returns false if not found. The module must be imported at the time,
 // use MSCHasModule to ensure that before calling.
-MSC_API bool MSCHasVariable(MVM *vm, const char *module, const char *name);
+MSC_API bool MSCHasVariable(Djuru *vm, const char *module, const char *name);
 
 // Returns true if [module] has been imported/resolved before, false if not.
-MSC_API bool MSCHasModule(MVM *vm, const char *module);
+MSC_API bool MSCHasModule(Djuru *vm, const char *module);
 
 // Sets the current djuru to be aborted, and uses the value in [slot] as the
 // runtime error object.
-MSC_API void MSCAbortDjuru(MVM *vm, int slot);
+MSC_API void MSCAbortDjuru(Djuru *vm, int slot);
 
 // Returns the user data associated with the MVM.
 MSC_API void *MSCGetUserData(MVM *vm);
@@ -412,4 +413,5 @@ MSC_API void *MSCGetUserData(MVM *vm);
 // Sets user data associated with the MVM.
 MSC_API void MSCSetUserData(MVM *vm, void *userData);
 
+MSC_API Djuru* MSCGetCurrentDjuru(MVM* vm);
 #endif //CPMSC_MSC_H

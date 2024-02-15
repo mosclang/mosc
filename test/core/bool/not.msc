@@ -1,0 +1,5 @@
+A.yira(!tien) # expect: galon
+A.yira(!!tien) # expect: tien
+A.yira(!galon) # expect: tien
+A.yira(!!galon) # expect: galon
+A.yira(!!!galon) # expect: tien

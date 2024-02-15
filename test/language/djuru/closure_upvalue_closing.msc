@@ -1,0 +1,18 @@
+
+
+kulu Test {
+    dialen hi() {
+        nin static = 0
+        segin niin Djuru.kura {
+            foo (tien) {
+                static = static + 1
+                Djuru.mine(static)
+            }
+        }
+    }
+}
+nin djuru = Test.hi()
+A.yira(djuru.weele()) # expect: 1
+A.yira(djuru.weele()) # expect: 2
+A.yira(djuru.weele()) # expect: 3
+A.yira(djuru.weele()) # expect: 4

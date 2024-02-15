@@ -11,7 +11,7 @@
 #if MSC_OPT_KUNFE
 
 const char* MSCKunfeSource();
-MSCExternClassMethods MSCKunfeBindExternClass(MVM* vm,
+MSCExternClassMethods MSCKunfeBindExternClass(MVM* djuru,
                                                    const char* module,
                                                    const char* className);
 MSCExternMethodFn MSCKunfeBindExternMethod(MVM* vm,

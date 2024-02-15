@@ -1,0 +1,13 @@
+
+kulu CallCallsExtern {
+  dunan dialen api()
+
+  dialen weele(param) {
+    A.yira(CallCallsExtern.api())
+    # expect: slots before 2
+    # expect: [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    A.yira(param) # expect: parameter
+    # expect: slots after 1
+    segin niin "result"
+  }
+ }

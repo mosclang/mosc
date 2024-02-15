@@ -1,0 +1,20 @@
+kulu Benchmark {
+  dunan dialen arguments(a, b, c, d)
+}
+
+nin start = A.waati
+nin result = 0
+seginka (1..1000000 kono i) {
+  result = result + Benchmark.arguments(1, 2, 3, 4)
+  result = result + Benchmark.arguments(1, 2, 3, 4)
+  result = result + Benchmark.arguments(1, 2, 3, 4)
+  result = result + Benchmark.arguments(1, 2, 3, 4)
+  result = result + Benchmark.arguments(1, 2, 3, 4)
+  result = result + Benchmark.arguments(1, 2, 3, 4)
+  result = result + Benchmark.arguments(1, 2, 3, 4)
+  result = result + Benchmark.arguments(1, 2, 3, 4)
+  result = result + Benchmark.arguments(1, 2, 3, 4)
+  result = result + Benchmark.arguments(1, 2, 3, 4)
+}
+A.yira(result)
+A.yira("elapsed: ${A.waati - start}")

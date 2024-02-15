@@ -1,0 +1,10 @@
+kulu AB {}
+
+kulu B {}
+
+kulu C {
+ method {}
+}
+kulu D {
+    nin a = ""
+}

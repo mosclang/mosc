@@ -1,6 +1,7 @@
 nin dugus = ["Molobala", "Marako", "Bamako"]
 
 dugus.woloma()
-A.yira(dugus)
+A.yira(dugus) # expect: [Bamako, Marako, Molobala]
 dugus.woloma {(e1, e2) => e1 > e2 }
-A.yira(dugus)
+A.yira(dugus) # expect: [Molobala, Marako, Bamako]
+

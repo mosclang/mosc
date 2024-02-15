@@ -1,0 +1,6 @@
+nin res = 0
+seginka (1..100 kono a) {
+    res = res + 1
+    nii(a == 20) atike
+}
+A.yira(res) # expect: 20

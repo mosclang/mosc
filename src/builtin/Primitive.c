@@ -7,40 +7,40 @@
 #include "Primitive.h"
 #include "../runtime/MVM.h"
 
-bool validateKey(MVM *vm, Value arg) {
+bool validateKey(Djuru *djuru, Value arg) {
     if (MSCMapIsValidKey(arg)) return true;
 
     RETURN_ERROR("Key must be a value type.");
 }
 
-bool validateFn(MVM *vm, Value arg, const char *argName) {
+bool validateFn(Djuru *djuru, Value arg, const char *argName) {
     if (IS_CLOSURE(arg)) return true;
     RETURN_ERROR_FMT("$ must be a function.", argName);
 }
 
-bool validateNum(MVM *vm, Value arg, const char *argName) {
+bool validateNum(Djuru *djuru, Value arg, const char *argName) {
     if (IS_NUM(arg)) return true;
     RETURN_ERROR_FMT("$ must be a number.", argName);
 }
 
-bool validateIntValue(MVM *vm, double value, const char *argName) {
+bool validateIntValue(Djuru *djuru, double value, const char *argName) {
     if (trunc(value) == value) return true;
     RETURN_ERROR_FMT("$ must be an integer.", argName);
 }
 
-bool validateInt(MVM *vm, Value arg, const char *argName) {
+bool validateInt(Djuru *djuru, Value arg, const char *argName) {
     // Make sure it's a number first.
-    if (!validateNum(vm, arg, argName)) return false;
-    return validateIntValue(vm, AS_NUM(arg), argName);
+    if (!validateNum(djuru, arg, argName)) return false;
+    return validateIntValue(djuru, AS_NUM(arg), argName);
 }
 
-bool validateString(MVM *vm, Value arg, const char *argName) {
+bool validateString(Djuru *djuru, Value arg, const char *argName) {
     if (IS_STRING(arg)) return true;
     RETURN_ERROR_FMT("$ must be a string.", argName);
 }
 
-static uint32_t validateIndexValue(MVM* vm, double value, uint32_t count, const char* argName) {
-    if (!validateIntValue(vm, value, argName)) return UINT32_MAX;
+static uint32_t validateIndexValue(Djuru* djuru, double value, uint32_t count, const char* argName) {
+    if (!validateIntValue(djuru, value, argName)) return UINT32_MAX;
 
     // Negative indices count from the end.
     if (value < 0) value = count + value;
@@ -48,15 +48,15 @@ static uint32_t validateIndexValue(MVM* vm, double value, uint32_t count, const 
     // Check bounds.
     if (value >= 0 && value < count) return (uint32_t)value;
 
-    vm->djuru->error = MSCStringFormatted(vm, "$ out of bounds.", argName);
+    djuru->error = MSCStringFormatted(djuru->vm, "$ out of bounds.", argName);
     return UINT32_MAX;
 }
-uint32_t validateIndex(MVM* vm, Value arg, uint32_t count, const char* argName) {
+uint32_t validateIndex(Djuru* vm, Value arg, uint32_t count, const char* argName) {
     if (!validateNum(vm, arg, argName)) return UINT32_MAX;
     return validateIndexValue(vm, AS_NUM(arg), count, argName);
 }
 
-uint32_t calculateRange(MVM* vm, Range* range, uint32_t* length,
+uint32_t calculateRange(Djuru* djuru, Range* range, uint32_t* length,
                         int* step)
 {
     *step = 0;
@@ -71,12 +71,12 @@ uint32_t calculateRange(MVM* vm, Range* range, uint32_t* length,
         return 0;
     }
 
-    uint32_t from = validateIndexValue(vm, range->from, *length, "Range start");
+    uint32_t from = validateIndexValue(djuru, range->from, *length, "Range start");
     if (from == UINT32_MAX) return UINT32_MAX;
 
     // Bounds check the end manually to handle exclusive ranges.
     double value = range->to;
-    if (!validateIntValue(vm, value, "Range end")) return UINT32_MAX;
+    if (!validateIntValue(djuru, value, "Range end")) return UINT32_MAX;
 
     // Negative indices count from the end.
     if (value < 0) value = *length + value;
@@ -97,7 +97,7 @@ uint32_t calculateRange(MVM* vm, Range* range, uint32_t* length,
 
     // Check bounds.
     if (value < 0 || value >= *length) {
-        vm->djuru->error = CONST_STRING(vm, "Range end out of bounds.");
+        djuru->error = CONST_STRING(djuru->vm, "Range end out of bounds.");
         return UINT32_MAX;
     }
 

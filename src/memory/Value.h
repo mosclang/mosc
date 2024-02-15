@@ -183,7 +183,7 @@ void MSCBlackenModule(Module *module, MVM *vm);
 /** End Module related functions **/
 
 
-typedef bool (*Primitive)(MVM *vm, Value *args);
+typedef bool (*Primitive)(Djuru *vm, Value *args);
 
 typedef struct {
     // The name of the function. Heap allocated and owned by the FnDebug.
@@ -424,10 +424,11 @@ typedef enum {
     DJURU_OTHER,
 } DjuruState;
 
-typedef struct sDjuru {
+struct sDjuru {
     Object obj;
 
     DjuruState state;
+    DjuruState entryState;
     Value error;
 
     // The stack of value slots. This is used for holding local variables and
@@ -437,6 +438,7 @@ typedef struct sDjuru {
 
     // A pointer to one past the top-most value on the stack.
     Value *stackTop;
+    Value *stackStart;
     // The number of allocated slots in the stack array.
     int stackCapacity;
     int numOfFrames;
@@ -446,18 +448,36 @@ typedef struct sDjuru {
 
     struct sDjuru *caller;
 
-
-} Djuru;
+    MVM *vm;
+};
 
 Djuru *MSCDjuruFrom(MVM *vm, Closure *closure);
 
 void MSCBlackenDjuru(Djuru *djuru, MVM *vm);
 
-void MSCEnsureStack(Djuru *djuru, MVM *vm, int needed);
+void MSCEnsureStack(Djuru *djuru, int needed);
+void MSCEnsureFrames(Djuru* djuru, int needed);
 
-void MSCAppendCallFrame(Djuru *djuru, Closure *closure, Value *stackStart);
+void inline static MSCPushCallFrame(Djuru *djuru, Closure *closure, Value *stackStart) {
+    MSCEnsureFrames(djuru, djuru->numOfFrames + 1);
+    // The caller should have ensured we already have enough capacity.
+    ASSERT(djuru->frameCapacity > djuru->numOfFrames, "No memory for call frame.");
 
-bool MSCHasError(Djuru *djuru);
+    CallFrame *frame = &djuru->frames[djuru->numOfFrames++];
+    frame->stackStart = djuru->stackStart = stackStart;
+    frame->closure = closure;
+    frame->ip = closure != NULL ? closure->fn->code.data: 0;
+
+}
+static inline void MSCPopCallFrame(Djuru *djuru) {
+    ASSERT(djuru->numOfFrames > 0, "Frame stack underflow.");
+
+    djuru->stackStart = djuru->numOfFrames > 1 ?
+                        djuru->frames[djuru->numOfFrames - 1].stackStart :
+                        djuru->stack;
+    djuru->numOfFrames--;
+}
+
 
 /** End of Djuru related functions **/
 
@@ -586,6 +606,11 @@ bool MSCHasError(Djuru *djuru);
 #define UNDEFINED_VAL ((Value){ VAL_UNDEFINED, { 0 } })
 
 #endif
+
+
+static inline bool MSCHasError(Djuru *djuru) {
+    return !IS_NULL(djuru->error);
+}
 
 
 // Converts the raw object pointer [obj] to a [Value].

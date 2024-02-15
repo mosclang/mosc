@@ -1,2 +1,5 @@
 nin a = 1e3
-A.yira(a)
+A.yira(a) # expect: 1000
+A.yira(1e-3) # expect: 0.001
+A.yira(1_000_000) # expect: 1000000
+A.yira(1___000__000) # expect: 1000000

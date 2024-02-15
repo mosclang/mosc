@@ -158,12 +158,13 @@ static void runtimeError(MVM *vm) {
     while (current != NULL) {
         // Every fiber along the call chain gets aborted with the same error.
         current->error = error;
-
+        // printf("Trying to find handler %p[%d] -- %p \n", current, current->state, current->caller);
         // If the caller ran vm fiber using "try", give it the error and stop.
         if (current->state == DJURU_TRY) {
             // Make the caller's try method return the error message.
             current->caller->stackTop[-1] = vm->djuru->error;
             vm->djuru = current->caller;
+            // printf("Found trying djuru %p -- %p \n", current, current->caller);
             return;
         }
 
@@ -176,7 +177,6 @@ static void runtimeError(MVM *vm) {
     // If we got here, nothing caught the error, so show the stack trace.
     MSCDebugPrintStackTrace(vm);
     vm->djuru = NULL;
-    vm->apiStack = NULL;
 }
 
 void MSCVMSetConfig(MVM *vm, MSCConfig *config) {
@@ -221,6 +221,15 @@ void *MSCGetUserData(MVM *vm) {
 // Sets user data associated with the MVM.
 void MSCSetUserData(MVM *vm, void *userData) {
     vm->config.userData = userData;
+}
+
+Djuru *MSCGetCurrentDjuru(MVM *vm) {
+
+
+    if (vm->djuru == NULL) {
+        vm->djuru = MSCDjuruFrom(vm, NULL);
+    }
+    return vm->djuru;
 }
 
 void MSCInitConfig(MSCConfig *config) {
@@ -322,13 +331,12 @@ MSCHandle *MSCMakeCallHandle(MVM *vm, const char *signature) {
         }
     }
 
-    /*// Count subscript arguments.
+    // Count subscript arguments.
     if (signature[0] == '[') {
-        for (int i = 0; i < signatureLength && signature[i] != ']'; i++)
-        {
+        for (int i = 0; i < signatureLength && signature[i] != ']'; i++) {
             if (signature[i] == '_') numParams++;
         }
-    }*/
+    }
 
     // Add the signatue to the method table.
     int method = MSCSymbolTableEnsure(vm, &vm->methodNames,
@@ -337,10 +345,10 @@ MSCHandle *MSCMakeCallHandle(MVM *vm, const char *signature) {
     // Create a little stub function that assumes the arguments are on the stack
     // and calls the method.
     Function *fn = MSCFunctionFrom(vm, NULL, numParams + 1);
-
+    fn->arity = numParams;
     // Wrap the function in a closure and then in a handle. Do vm here so it
     // doesn't get collected as we fill it in.
-    MSCHandle *value = MSCMakeHandle(vm, OBJ_VAL(fn));
+    MSCHandle *value = MSCMakeHandle(vm->djuru, OBJ_VAL(fn));
     value->value = OBJ_VAL(MSCClosureFrom(vm, fn));
 
     MSCWriteByteBuffer(vm, &fn->code, (uint8_t) (OP_CALL_0 + numParams));
@@ -632,18 +640,16 @@ static Value resolveModule(MVM *vm, Value name) {
     return name;
 }
 
-static void callExtern(MVM *vm, Djuru *fiber,
+static void callExtern(Djuru *djuru,
                        MSCExternMethodFn foreign, int numArgs) {
-    ASSERT(vm->apiStack == NULL, "Cannot already be in foreign call.");
-    vm->apiStack = fiber->stackTop - numArgs;
-
-    foreign(vm);
+    MSCPushCallFrame(djuru, NULL, djuru->stackTop - numArgs);
+    foreign(djuru);
 
     // Discard the stack slots for the arguments and temporaries but leave one
     // for the result.
-    fiber->stackTop = vm->apiStack + 1;
+    djuru->stackTop = djuru->stackStart + 1;
 
-    vm->apiStack = NULL;
+    MSCPopCallFrame(djuru);
 }
 
 static void createExtern(MVM *vm, Djuru *djuru, Value *stack) {
@@ -658,13 +664,13 @@ static void createExtern(MVM *vm, Djuru *djuru, Value *stack) {
     Method *method = &classObj->methods.data[symbol];
     ASSERT(method->type == METHOD_EXTERN, "Allocator should be foreign.");
 
-    // Pass the constructor arguments to the allocator as well.
-    ASSERT(vm->apiStack == NULL, "Cannot already be in foreign call.");
-    vm->apiStack = stack;
-
-    method->as.foreign(vm);
-
-    vm->apiStack = NULL;
+    MSCPushCallFrame(djuru, NULL, stack);
+#ifdef DEBUG
+    int numSlots = MSCGetSlotCount(djuru);
+#endif
+    method->as.foreign(djuru);
+    ASSERT(numSlots == MSCGetSlotCount(djuru), "Foreign creator altered slot count.");
+    MSCPopCallFrame(djuru);
 }
 
 static Method *findExtensionMethod(MVM *vm, Class *classObj, int symbol) {
@@ -739,13 +745,16 @@ static Value importModule(MVM *vm, Value name) {
 }
 
 
-static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
+static MSCInterpretResult runInterpreter(register Djuru *djuru) {
+    MVM *vm = djuru->vm;
 #if __cplusplus > 199711L
 #define register      // Deprecated in C++11.
 #endif  // #if __cplusplus > 199711L
     // Remember the current djuru so we can find it if a GC happens.
     vm->djuru = djuru;
-    djuru->state = DJURU_ROOT;
+    Djuru *callingDjuru = djuru;
+    // djuru->state = DJURU_ROOT;
+    djuru->state = djuru->entryState;
 
     // Hoist these into local variables. They are accessed frequently in the loop
     // but assigned less frequently. Keeping them in locals and updating them when
@@ -774,6 +783,7 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
       do                                                                       \
       {                                                                        \
         frame = &djuru->frames[djuru->numOfFrames - 1];                          \
+        ASSERT(frame->closure != NULL, "Trying to unwind native call frame");    \
         stackStart = frame->stackStart;                                        \
         ip = frame->ip;                                                        \
         fn = frame->closure->fn;                                               \
@@ -786,8 +796,10 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
       do                                                                       \
       {                                                                        \
         STORE_FRAME();                                                          \
+        djuru = vm->djuru;                                                    \
         runtimeError(vm);                                                      \
         if (vm->djuru == NULL) return RESULT_RUNTIME_ERROR;               \
+        if (djuru->entryState == DJURU_TRY) return RESULT_RUNTIME_ERROR;              \
         djuru = vm->djuru;                                                     \
         LOAD_FRAME();                                                          \
         DISPATCH();                                                            \
@@ -908,7 +920,7 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
             Value *args = djuru->stackTop - numArgs;
             Closure *closure = AS_CLOSURE(args[0]);
             STORE_FRAME();
-            callFunction(vm, djuru, closure, numArgs);
+            callFunction(djuru, closure, numArgs);
             LOAD_FRAME();
             DISPATCH();
         }
@@ -994,21 +1006,21 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
                 methodNotFound(vm, classObj, symbol);
                 RUNTIME_ERROR();
             }
-
+            STORE_FRAME();
             switch (method->type) {
                 case METHOD_PRIMITIVE:
-                    if (method->as.primitive(vm, args)) {
+                    if (method->as.primitive(djuru, args)) {
                         // The result is now in the first arg slot. Discard the other
                         // stack slots.
                         djuru->stackTop -= numArgs - 1;
                     } else {
                         // An error, djuru switch, or call frame change occurred.
-                        STORE_FRAME();
+
                         // If we don't have a djuru to switch to, stop interpreting.
                         djuru = vm->djuru;
                         if (djuru == NULL) return RESULT_SUCCESS;
                         if (MSCHasError(djuru)) RUNTIME_ERROR();
-                        LOAD_FRAME();
+
                     }
                     break;
 
@@ -1017,27 +1029,32 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
                         RUNTIME_ERROR();
                         break;
                     }
-
-                    STORE_FRAME();
-                    method->as.primitive(vm, args);
-                    LOAD_FRAME();
+                    method->as.primitive(djuru, args);
                     break;
 
                 case METHOD_EXTERN:
-                    callExtern(vm, djuru, method->as.foreign, numArgs);
-                    if (MSCHasError(djuru)) RUNTIME_ERROR();
+                    callExtern(djuru, method->as.foreign, numArgs);
+
+                    if (MSCHasError(djuru)) {
+                        // printf("Error after extern method call %p -- %p \n", djuru, vm->djuru);
+                        if (vm->djuru == djuru) {
+                            RUNTIME_ERROR();
+                        }
+                        djuru = vm->djuru;
+                    }
+                    // printf("Resuming djuru %p\n", vm->djuru);
                     break;
 
                 case METHOD_BLOCK:
-                    STORE_FRAME();
-                    callFunction(vm, djuru, method->as.closure, numArgs);
-                    LOAD_FRAME();
+                    callFunction(djuru, method->as.closure, numArgs);
+
                     break;
 
                 case METHOD_NONE:
                     UNREACHABLE();
                     break;
             }
+            LOAD_FRAME();
             DISPATCH();
         }
 
@@ -1183,19 +1200,21 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
         CASE_CODE(RETURN):
         {
             Value result = POP();
-            djuru->numOfFrames--;
+            // printf("Return for djuru %p\n", djuru);
+            MSCPopCallFrame(djuru);
 
             // Close any upvalues still in scope.
             closeUpvalues(djuru, stackStart);
-
+            // Store the result of the block in the first slot, which is where the
+            // caller expects it.
+            stackStart[0] = result;
+            // Discard the stack slots for the call frame (leaving one slot for the
+            // result).
+            djuru->stackTop = stackStart + 1;
             // If the djuru is complete, end it.
             if (djuru->numOfFrames == 0) {
                 // See if there's another djuru to return to. If not, we're done.
                 if (djuru->caller == NULL) {
-                    // Store the final result value at the beginning of the stack so the
-                    // C API can get it.
-                    djuru->stack[0] = result;
-                    djuru->stackTop = djuru->stack + 1;
                     return RESULT_SUCCESS;
                 }
 
@@ -1206,14 +1225,16 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
 
                 // Store the result in the resuming djuru.
                 djuru->stackTop[-1] = result;
-            } else {
-                // Store the result of the block in the first slot, which is where the
-                // caller expects it.
-                stackStart[0] = result;
+            } else if (djuru->frames[djuru->numOfFrames - 1].closure == NULL) {
 
-                // Discard the stack slots for the call frame (leaving one slot for the
-                // result).
-                djuru->stackTop = frame->stackStart + 1;
+                if (djuru != callingDjuru) {
+                    //Attempting to return to wrenCall from wrong fiber.
+                    abort();
+                }
+
+                MSCPopCallFrame(djuru);
+
+                return RESULT_SUCCESS;
             }
 
             LOAD_FRAME();
@@ -1227,8 +1248,10 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
 
         CASE_CODE(EXTERN_CONSTRUCT):
         ASSERT(IS_CLASS(stackStart[0]), "'vm' should be a class.");
+        STORE_FRAME();
         createExtern(vm, djuru, stackStart);
         if (MSCHasError(djuru)) RUNTIME_ERROR();
+        LOAD_FRAME();
         DISPATCH();
 
         CASE_CODE(CLOSURE):
@@ -1318,7 +1341,7 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
             if (IS_CLOSURE(PEEK())) {
                 STORE_FRAME();
                 Closure *closure = AS_CLOSURE(PEEK());
-                callFunction(vm, djuru, closure, 1);
+                callFunction(djuru, closure, 1);
                 LOAD_FRAME();
             } else {
                 // The module has already been loaded. Remember it so we can import
@@ -1357,34 +1380,25 @@ static MSCInterpretResult runInterpreter(MVM *vm, Djuru *djuru) {
     return RESULT_COMPILATION_ERROR;
 }
 
-MSCInterpretResult MSCCall(MVM *vm, MSCHandle *method) {
+MSCInterpretResult MSCCall(Djuru *djuru, MSCHandle *method) {
+    ASSERT(djuru != NULL, "Djuru cannot be NULL");
     ASSERT(method != NULL, "Method cannot be NULL.");
     ASSERT(IS_CLOSURE(method->value), "Method must be a method handle.");
-    ASSERT(vm->djuru != NULL, "Must set up arguments for call first.");
-    ASSERT(vm->apiStack != NULL, "Must set up arguments for call first.");
-    ASSERT(vm->djuru->numOfFrames == 0, "Can not call from a foreign method.");
-
+    ASSERT(djuru->vm->djuru == djuru, "Djuru is out of sync");
     Closure *closure = AS_CLOSURE(method->value);
 
-    ASSERT(vm->djuru->stackTop - vm->djuru->stack >= closure->fn->arity,
+    ASSERT(MSCGetSlotCount(djuru) >= closure->fn->arity + 1,
            "Stack must have enough arguments for method.");
+    MSCPushCallFrame(djuru, NULL, djuru->stackStart);
+    callFunction(djuru, closure, closure->fn->arity + 1);
+    DjuruState initialState = djuru->state;
+    djuru->entryState = initialState;
+    MSCInterpretResult result = runInterpreter(djuru);
 
-    // Clear the API stack. Now that MSCCall() has control, we no longer need
-    // it. We use vm being non-null to tell if re-entrant calls to foreign
-    // methods are happening, so it's important to clear it out now so that you
-    // can call foreign methods from within calls to MSCCall().
-    vm->apiStack = NULL;
-
-    // Discard any extra temporary slots. We take for granted that the stub
-    // function has exactly one slot for each argument.
-    vm->djuru->stackTop = &vm->djuru->stack[closure->fn->maxSlots];
-
-    callFunction(vm, vm->djuru, closure, 0);
-    MSCInterpretResult result = runInterpreter(vm, vm->djuru);
-
-    // If the call didn't abort, then set up the API stack to point to the
-    // beginning of the stack so the host can access the call's return value.
-    if (vm->djuru != NULL) vm->apiStack = vm->djuru->stack;
+    if (djuru->vm->djuru != djuru) {
+        // if an error abort the current 'djuru', we need to make
+        djuru->state = initialState;
+    }
 
     return result;
 }
@@ -1405,29 +1419,29 @@ Value MSCFindVariable(MVM *vm, Module *module, const char *name) {
     return module->variables.data[symbol];
 }
 
-MSCHandle *MSCMakeHandle(MVM *vm, Value value) {
-    if (IS_OBJ(value)) MSCPushRoot(vm->gc, AS_OBJ(value));
+MSCHandle *MSCMakeHandle(Djuru *djuru, Value value) {
+    if (IS_OBJ(value)) MSCPushRoot(djuru->vm->gc, AS_OBJ(value));
 
     // Make a handle for it.
-    MSCHandle *handle = ALLOCATE(vm, MSCHandle);
+    MSCHandle *handle = ALLOCATE(djuru->vm, MSCHandle);
     handle->value = value;
 
-    if (IS_OBJ(value)) MSCPopRoot(vm->gc);
+    if (IS_OBJ(value)) MSCPopRoot(djuru->vm->gc);
 
     // Add it to the front of the linked list of handles.
-    if (vm->handles != NULL) vm->handles->prev = handle;
+    if (djuru->vm->handles != NULL) djuru->vm->handles->prev = handle;
     handle->prev = NULL;
-    handle->next = vm->handles;
-    vm->handles = handle;
+    handle->next = djuru->vm->handles;
+    djuru->vm->handles = handle;
 
     return handle;
 }
 
-void MSCReleaseHandle(MVM *vm, MSCHandle *handle) {
+void MSCReleaseHandle(Djuru *djuru, MSCHandle *handle) {
     ASSERT(handle != NULL, "Handle cannot be NULL.");
 
     // Update the VM's head pointer if we're releasing the first handle.
-    if (vm->handles == handle) vm->handles = handle->next;
+    if (djuru->vm->handles == handle) djuru->vm->handles = handle->next;
 
     // Unlink it from the list.
     if (handle->prev != NULL) handle->prev->next = handle->next;
@@ -1438,315 +1452,298 @@ void MSCReleaseHandle(MVM *vm, MSCHandle *handle) {
     handle->prev = NULL;
     handle->next = NULL;
     handle->value = NULL_VAL;
-    DEALLOCATE(vm, handle);
+    DEALLOCATE(djuru->vm, handle);
 }
 
-int MSCGetSlotCount(MVM *vm) {
-    if (vm->apiStack == NULL) return 0;
+int MSCGetSlotCount(Djuru *djuru) {
+    ASSERT(djuru != NULL, "Djuru must exists");
+    if (djuru == NULL) return 0;
 
-    return (int) (vm->djuru->stackTop - vm->apiStack);
+    return (int) (djuru->stackTop - djuru->stackStart);
 }
 
-// Ensures that [slot] is a valid index into the API's stack of slots.
-static void validateApiSlot(MVM *vm, int slot) {
-    ASSERT(slot >= 0, "Slot cannot be negative.");
-    ASSERT(slot < MSCGetSlotCount(vm), "Not that many slots.");
-}
 
-Value *MSCSlotAtUnsafe(MVM *vm, int slot) {
+Value *MSCSlotAtUnsafe(Djuru *vm, int slot) {
     validateApiSlot(vm, slot);
-    return &vm->apiStack[slot];
+    return &vm->stackStart[slot];
 }
 
-void MSCEnsureSlots(MVM *vm, int numSlots) {
-    // If we don't have a djuru accessible, create one for the API to use.
-    if (vm->apiStack == NULL) {
-        vm->djuru = MSCDjuruFrom(vm, NULL);
-        vm->apiStack = vm->djuru->stack;
-    }
-
-    int currentSize = (int) (vm->djuru->stackTop - vm->apiStack);
-    if (currentSize >= numSlots) return;
+void MSCEnsureSlots(Djuru *djuru, int numSlots) {
+    ASSERT(djuru != NULL, "Djuru must exists");
+    ASSERT(djuru == djuru->vm->djuru, "Out of sync scope");
 
     // Grow the stack if needed.
-    int needed = (int) (vm->apiStack - vm->djuru->stack) + numSlots;
-    MSCEnsureStack(vm->djuru, vm, needed);
-
-    vm->djuru->stackTop = vm->apiStack + numSlots;
+    int needed = (int) (djuru->stackStart - djuru->stack) + numSlots;
+    MSCEnsureStack(djuru, needed);
+    Value *top = djuru->stackStart + numSlots;
+    for (Value *p = djuru->stackTop; p < top; p++) {
+        *p = NULL_VAL;
+    }
+    djuru->stackTop = djuru->stackStart + numSlots;
 }
 
 
-void MSCAbortDjuru(MVM *vm, int slot) {
-    validateApiSlot(vm, slot);
-    vm->djuru->error = vm->apiStack[slot];
+void MSCAbortDjuru(Djuru *djuru, int slot) {
+    djuru->error = MSCGetSlot(djuru, slot);
 }
 
 
 // Gets the type of the object in [slot].
-MSCType MSCGetSlotType(MVM *vm, int slot) {
-    validateApiSlot(vm, slot);
-    if (IS_BOOL(vm->apiStack[slot])) return MSC_TYPE_BOOL;
-    if (IS_NUM(vm->apiStack[slot])) return MSC_TYPE_NUM;
-    if (IS_FOREIGN(vm->apiStack[slot])) return MSC_TYPE_EXTERN;
-    if (IS_LIST(vm->apiStack[slot])) return MSC_TYPE_LIST;
-    if (IS_MAP(vm->apiStack[slot])) return MSC_TYPE_MAP;
-    if (IS_NULL(vm->apiStack[slot])) return MSC_TYPE_NULL;
-    if (IS_STRING(vm->apiStack[slot])) return MSC_TYPE_STRING;
+MSCType MSCGetSlotType(Djuru *djuru, int slot) {
+    Value value = MSCGetSlot(djuru, slot);
+    if (IS_BOOL(value)) return MSC_TYPE_BOOL;
+    if (IS_NUM(value)) return MSC_TYPE_NUM;
+    if (IS_FOREIGN(value)) return MSC_TYPE_EXTERN;
+    if (IS_LIST(value)) return MSC_TYPE_LIST;
+    if (IS_MAP(value)) return MSC_TYPE_MAP;
+    if (IS_NULL(value)) return MSC_TYPE_NULL;
+    if (IS_STRING(value)) return MSC_TYPE_STRING;
 
     return MSC_TYPE_UNKNOWN;
 }
 
-bool MSCGetSlotBool(MVM *vm, int slot) {
-    validateApiSlot(vm, slot);
-    ASSERT(IS_BOOL(vm->apiStack[slot]), "Slot must hold a bool.");
+bool MSCGetSlotBool(Djuru *djuru, int slot) {
+    Value value = MSCGetSlot(djuru, slot);
+    ASSERT(IS_BOOL(value), "Slot must hold a bool.");
 
-    return AS_BOOL(vm->apiStack[slot]);
+    return AS_BOOL(value);
 }
 
-const char *MSCGetSlotBytes(MVM *vm, int slot, int *length) {
-    validateApiSlot(vm, slot);
-    ASSERT(IS_STRING(vm->apiStack[slot]), "Slot must hold a string.");
+const char *MSCGetSlotBytes(Djuru *djuru, int slot, int *length) {
+    Value value = MSCGetSlot(djuru, slot);
+    ASSERT(IS_STRING(value), "Slot must hold a string.");
 
-    String *string = AS_STRING(vm->apiStack[slot]);
+    String *string = AS_STRING(value);
     *length = string->length;
     return string->value;
 }
 
-double MSCGetSlotDouble(MVM *vm, int slot) {
-    validateApiSlot(vm, slot);
-    ASSERT(IS_NUM(vm->apiStack[slot]), "Slot must hold a number.");
+double MSCGetSlotDouble(Djuru *djuru, int slot) {
+    Value value = MSCGetSlot(djuru, slot);
+    ASSERT(IS_NUM(value), "Slot must hold a number.");
 
-    return AS_NUM(vm->apiStack[slot]);
+    return AS_NUM(value);
 }
 
-void *MSCGetSlotExtern(MVM *vm, int slot) {
-    validateApiSlot(vm, slot);
-    ASSERT(IS_FOREIGN(vm->apiStack[slot]),
+void *MSCGetSlotExtern(Djuru *djuru, int slot) {
+    Value value = MSCGetSlot(djuru, slot);
+    ASSERT(IS_FOREIGN(value),
            "Slot must hold a foreign instance.");
-    return AS_EXTERN(vm->apiStack[slot])->data;
+    return AS_EXTERN(value)->data;
 }
 
-const char *MSCGetSlotString(MVM *vm, int slot) {
-    validateApiSlot(vm, slot);
-    ASSERT(IS_STRING(vm->apiStack[slot]), "Slot must hold a string.");
+const char *MSCGetSlotString(Djuru *djuru, int slot) {
+    Value value = MSCGetSlot(djuru, slot);
+    ASSERT(IS_STRING(value), "Slot must hold a string.");
 
-    return AS_CSTRING(vm->apiStack[slot]);
+    return AS_CSTRING(value);
 }
 
-MSCHandle *MSCGetSlotHandle(MVM *vm, int slot) {
-    validateApiSlot(vm, slot);
-    return MSCMakeHandle(vm, vm->apiStack[slot]);
+MSCHandle *MSCGetSlotHandle(Djuru *djuru, int slot) {
+    return MSCMakeHandle(djuru, MSCGetSlot(djuru, slot));
 }
 
-// Stores [value] in [slot] in the foreign call stack.
-static void setSlot(MVM *vm, int slot, Value value) {
-    validateApiSlot(vm, slot);
-    vm->apiStack[slot] = value;
+
+void MSCSetSlotBool(Djuru *djuru, int slot, bool value) {
+    MSCSetSlot(djuru, slot, BOOL_VAL(value));
 }
 
-void MSCSetSlotBool(MVM *vm, int slot, bool value) {
-    setSlot(vm, slot, BOOL_VAL(value));
-}
-
-void MSCSetSlotBytes(MVM *vm, int slot, const char *bytes, size_t length) {
+void MSCSetSlotBytes(Djuru *djuru, int slot, const char *bytes, size_t length) {
     ASSERT(bytes != NULL, "Byte array cannot be NULL.");
-    setSlot(vm, slot, MSCStringFromCharsWithLength(vm, bytes, (uint32_t) length));
+    MSCSetSlot(djuru, slot, MSCStringFromCharsWithLength(djuru->vm, bytes, (uint32_t) length));
 }
 
-void MSCSetSlotDouble(MVM *vm, int slot, double value) {
-    setSlot(vm, slot, NUM_VAL(value));
+void MSCSetSlotDouble(Djuru *vm, int slot, double value) {
+    MSCSetSlot(vm, slot, NUM_VAL(value));
 }
 
-void *MSCSetSlotNewExtern(MVM *vm, int slot, int classSlot, size_t size) {
-    validateApiSlot(vm, slot);
-    validateApiSlot(vm, classSlot);
-    ASSERT(IS_CLASS(vm->apiStack[classSlot]), "Slot must hold a class.");
+void *MSCSetSlotNewExtern(Djuru *djuru, int slot, int classSlot, size_t size) {
+    validateApiSlot(djuru, slot);
+    validateApiSlot(djuru, classSlot);
+    Value classValue = MSCGetSlot(djuru, classSlot);
+    ASSERT(IS_CLASS(classValue), "Slot must hold a class.");
 
-    Class *classObj = AS_CLASS(vm->apiStack[classSlot]);
+    Class *classObj = AS_CLASS(classValue);
     ASSERT(classObj->numFields == -1, "Class must be a foreign class.");
 
-    Extern *foreign = MSCExternFrom(vm, classObj, size);
-    vm->apiStack[slot] = OBJ_VAL(foreign);
+    Extern *foreign = MSCExternFrom(djuru->vm, classObj, size);
+    MSCSetSlot(djuru, slot, OBJ_VAL(foreign));
 
     return (void *) foreign->data;
 }
 
-void MSCSetSlotNewList(MVM *vm, int slot) {
-    setSlot(vm, slot, OBJ_VAL(MSCListFrom(vm, 0)));
+void MSCSetSlotNewList(Djuru *djuru, int slot) {
+    MSCSetSlot(djuru, slot, OBJ_VAL(MSCListFrom(djuru->vm, 0)));
 }
 
-void MSCSetSlotNewMap(MVM *vm, int slot) {
-    setSlot(vm, slot, OBJ_VAL(MSCMapFrom(vm)));
+void MSCSetSlotNewMap(Djuru *djuru, int slot) {
+    MSCSetSlot(djuru, slot, OBJ_VAL(MSCMapFrom(djuru->vm)));
 }
 
-void MSCSetSlotNull(MVM *vm, int slot) {
-    setSlot(vm, slot, NULL_VAL);
+void MSCSetSlotNull(Djuru *djuru, int slot) {
+    MSCSetSlot(djuru, slot, NULL_VAL);
 }
 
-void MSCSetSlotString(MVM *vm, int slot, const char *text) {
+void MSCSetSlotString(Djuru *djuru, int slot, const char *text) {
     ASSERT(text != NULL, "String cannot be NULL.");
 
-    setSlot(vm, slot, MSCStringFromConstChars(vm, text));
+    MSCSetSlot(djuru, slot, MSCStringFromConstChars(djuru->vm, text));
 }
 
-void MSCSetSlotHandle(MVM *vm, int slot, MSCHandle *handle) {
+void MSCSetSlotHandle(Djuru *djuru, int slot, MSCHandle *handle) {
     ASSERT(handle != NULL, "Handle cannot be NULL.");
 
-    setSlot(vm, slot, handle->value);
+    MSCSetSlot(djuru, slot, handle->value);
 }
 
-int MSCGetListCount(MVM *vm, int slot) {
-    validateApiSlot(vm, slot);
-    ASSERT(IS_LIST(vm->apiStack[slot]), "Slot must hold a list.");
+int MSCGetListCount(Djuru *djuru, int slot) {
+    Value value = MSCGetSlot(djuru, slot);
+    ASSERT(IS_LIST(value), "Slot must hold a list.");
 
-    ValueBuffer elements = AS_LIST(vm->apiStack[slot])->elements;
+    ValueBuffer elements = AS_LIST(value)->elements;
     return elements.count;
 }
 
-void MSCGetListElement(MVM *vm, int listSlot, int index, int elementSlot) {
-    validateApiSlot(vm, listSlot);
-    validateApiSlot(vm, elementSlot);
-    ASSERT(IS_LIST(vm->apiStack[listSlot]), "Slot must hold a list.");
+void MSCGetListElement(Djuru *djuru, int listSlot, int index, int elementSlot) {
+    Value list = MSCGetSlot(djuru, listSlot);
+    ASSERT(IS_LIST(list), "Slot must hold a list.");
 
-    ValueBuffer elements = AS_LIST(vm->apiStack[listSlot])->elements;
+    ValueBuffer elements = AS_LIST(list)->elements;
 
     uint32_t usedIndex = MSCValidateIndex((uint32_t) elements.count, index);
     ASSERT(usedIndex != UINT32_MAX, "Index out of bounds.");
 
-    vm->apiStack[elementSlot] = elements.data[usedIndex];
+    MSCSetSlot(djuru, elementSlot, elements.data[usedIndex]);
 }
 
-void MSCSetListElement(MVM *vm, int listSlot, int index, int elementSlot) {
-    validateApiSlot(vm, listSlot);
-    validateApiSlot(vm, elementSlot);
-    ASSERT(IS_LIST(vm->apiStack[listSlot]), "Slot must hold a list.");
+void MSCSetListElement(Djuru *djuru, int listSlot, int index, int elementSlot) {
+    Value listValue = MSCGetSlot(djuru, listSlot);
+    Value element = MSCGetSlot(djuru, elementSlot);
+    ASSERT(IS_LIST(listValue), "Slot must hold a list.");
 
-    List *list = AS_LIST(vm->apiStack[listSlot]);
+    List *list = AS_LIST(listValue);
 
     uint32_t usedIndex = MSCValidateIndex((uint32_t) list->elements.count, index);
     ASSERT(usedIndex != UINT32_MAX, "Index out of bounds.");
 
-    list->elements.data[usedIndex] = vm->apiStack[elementSlot];
+    list->elements.data[usedIndex] = element;
 }
 
-void MSCInsertInList(MVM *vm, int listSlot, int index, int elementSlot) {
-    validateApiSlot(vm, listSlot);
-    validateApiSlot(vm, elementSlot);
-    ASSERT(IS_LIST(vm->apiStack[listSlot]), "Must insert into a list.");
+void MSCInsertInList(Djuru *djuru, int listSlot, int index, int elementSlot) {
+    Value listValue = MSCGetSlot(djuru, listSlot);
+    Value element = MSCGetSlot(djuru, elementSlot);
 
-    List *list = AS_LIST(vm->apiStack[listSlot]);
+    ASSERT(IS_LIST(listValue), "Slot must hold a list.");
+
+    List *list = AS_LIST(listValue);
 
     // Negative indices count from the end.
     // We don't use MSCValidateIndex here because insert allows 1 past the end.
     if (index < 0) index = list->elements.count + 1 + index;
 
     ASSERT(index <= list->elements.count, "Index out of bounds.");
-    MSCListInsert(list, vm, vm->apiStack[elementSlot], index);
+
+
+    MSCListInsert(list, djuru->vm, element, index);
+
 }
 
-int MSCGetMapCount(MVM *vm, int slot) {
-    validateApiSlot(vm, slot);
-    ASSERT(IS_MAP(vm->apiStack[slot]), "Slot must hold a map.");
+int MSCGetMapCount(Djuru *djuru, int slot) {
+    Value value = MSCGetSlot(djuru, slot);
+    ASSERT(IS_MAP(value), "Slot must hold a map.");
 
-    Map *map = AS_MAP(vm->apiStack[slot]);
+    Map *map = AS_MAP(value);
     return map->count;
 }
 
-bool MSCMapContainsKey(MVM *vm, int mapSlot, int keySlot) {
-    validateApiSlot(vm, mapSlot);
-    validateApiSlot(vm, keySlot);
-    ASSERT(IS_MAP(vm->apiStack[mapSlot]), "Slot must hold a map.");
+bool MSCMapContainsKey(Djuru *djuru, int mapSlot, int keySlot) {
+    Value mapValue = MSCGetSlot(djuru, mapSlot);
+    ASSERT(IS_MAP(mapValue), "Slot must hold a map.");
 
-    Value key = vm->apiStack[keySlot];
+    Value key = MSCGetSlot(djuru, keySlot);
     ASSERT(MSCMapIsValidKey(key), "Key must be a value type");
-    if (!validateKey(vm, key)) return false;
+    if (!validateKey(djuru, key)) return false;
 
-    Map *map = AS_MAP(vm->apiStack[mapSlot]);
+    Map *map = AS_MAP(mapValue);
     Value value = MSCMapGet(map, key);
 
     return !IS_UNDEFINED(value);
 }
 
-void MSCGetMapValue(MVM *vm, int mapSlot, int keySlot, int valueSlot) {
-    validateApiSlot(vm, mapSlot);
-    validateApiSlot(vm, keySlot);
-    validateApiSlot(vm, valueSlot);
-    ASSERT(IS_MAP(vm->apiStack[mapSlot]), "Slot must hold a map.");
+void MSCGetMapValue(Djuru *djuru, int mapSlot, int keySlot, int valueSlot) {
+    Value mapValue = MSCGetSlot(djuru, mapSlot);
+    Value key = MSCGetSlot(djuru, keySlot);
+    ASSERT(IS_MAP(mapValue), "Slot must hold a map.");
 
-    Map *map = AS_MAP(vm->apiStack[mapSlot]);
-    Value value = MSCMapGet(map, vm->apiStack[keySlot]);
+    Map *map = AS_MAP(mapValue);
+    Value value = MSCMapGet(map, key);
     if (IS_UNDEFINED(value)) {
         value = NULL_VAL;
     }
 
-    vm->apiStack[valueSlot] = value;
+    MSCSetSlot(djuru, valueSlot, value);
 }
 
-void MSCSetMapValue(MVM *vm, int mapSlot, int keySlot, int valueSlot) {
-    validateApiSlot(vm, mapSlot);
-    validateApiSlot(vm, keySlot);
-    validateApiSlot(vm, valueSlot);
-    ASSERT(IS_MAP(vm->apiStack[mapSlot]), "Must insert into a map.");
-
-    Value key = vm->apiStack[keySlot];
+void MSCSetMapValue(Djuru *djuru, int mapSlot, int keySlot, int valueSlot) {
+    Value mapValue = MSCGetSlot(djuru, mapSlot);
+    ASSERT(IS_MAP(mapValue), "Must insert into a map.");
+    Value key = MSCGetSlot(djuru, keySlot);
     ASSERT(MSCMapIsValidKey(key), "Key must be a value type");
 
-    if (!validateKey(vm, key)) {
+    if (!validateKey(djuru, key)) {
         return;
     }
 
-    Value value = vm->apiStack[valueSlot];
-    Map *map = AS_MAP(vm->apiStack[mapSlot]);
+    Value value = MSCGetSlot(djuru, valueSlot);
+    Map *map = AS_MAP(mapValue);
 
-    MSCMapSet(map, vm, key, value);
+    MSCMapSet(map, djuru->vm, key, value);
 }
 
-void MSCRemoveMapValue(MVM *vm, int mapSlot, int keySlot,
+void MSCRemoveMapValue(Djuru *djuru, int mapSlot, int keySlot,
                        int removedValueSlot) {
-    validateApiSlot(vm, mapSlot);
-    validateApiSlot(vm, keySlot);
-    ASSERT(IS_MAP(vm->apiStack[mapSlot]), "Slot must hold a map.");
-
-    Value key = vm->apiStack[keySlot];
-    if (!validateKey(vm, key)) {
+    Value mapValue = MSCGetSlot(djuru, mapSlot);
+    ASSERT(IS_MAP(mapValue), "Slot must hold a map.");
+    Value key = MSCGetSlot(djuru, keySlot);
+    if (!validateKey(djuru, key)) {
         return;
     }
 
-    Map *map = AS_MAP(vm->apiStack[mapSlot]);
-    Value removed = MSCMapRemove(map, vm, key);
-    setSlot(vm, removedValueSlot, removed);
+    Map *map = AS_MAP(mapValue);
+    Value removed = MSCMapRemove(map, djuru->vm, key);
+    MSCSetSlot(djuru, removedValueSlot, removed);
 }
 
-void MSCGetVariable(MVM *vm, const char *module, const char *name,
+void MSCGetVariable(Djuru *djuru, const char *module, const char *name,
                     int slot) {
     ASSERT(module != NULL, "Module cannot be NULL.");
     ASSERT(name != NULL, "Variable name cannot be NULL.");
 
-    Value moduleName = MSCStringFormatted(vm, "$", module);
-    MSCPushRoot(vm->gc, AS_OBJ(moduleName));
-    Module *moduleObj = MSCGetModule(vm, moduleName);
+    Value moduleName = MSCStringFormatted(djuru->vm, "$", module);
+    MSCPushRoot(djuru->vm->gc, AS_OBJ(moduleName));
+    Module *moduleObj = MSCGetModule(djuru->vm, moduleName);
     ASSERT(moduleObj != NULL, "Could not find module.");
 
-    MSCPopRoot(vm->gc);
+    MSCPopRoot(djuru->vm->gc);
     int variableSlot = MSCSymbolTableFind(&moduleObj->variableNames,
                                           name, strlen(name));
     ASSERT(variableSlot != -1, "Could not find variable.");
 
-    setSlot(vm, slot, moduleObj->variables.data[variableSlot]);
+    MSCSetSlot(djuru, slot, moduleObj->variables.data[variableSlot]);
 }
 
-bool MSCHasVariable(MVM *vm, const char *module, const char *name) {
+bool MSCHasVariable(Djuru *djuru, const char *module, const char *name) {
     ASSERT(module != NULL, "Module cannot be NULL.");
     ASSERT(name != NULL, "Variable name cannot be NULL.");
 
-    Value moduleName = MSCStringFormatted(vm, "$", module);
-    MSCPushRoot(vm->gc, AS_OBJ(moduleName));
+    Value moduleName = MSCStringFormatted(djuru->vm, "$", module);
+    MSCPushRoot(djuru->vm->gc, AS_OBJ(moduleName));
 
     //We don't use MSCHasModule since we want to use the module object.
-    Module *moduleObj = MSCGetModule(vm, moduleName);
+    Module *moduleObj = MSCGetModule(djuru->vm, moduleName);
     ASSERT(moduleObj != NULL, "Could not find module.");
 
-    MSCPopRoot(vm->gc); // moduleName.
+    MSCPopRoot(djuru->vm->gc); // moduleName.
 
     int variableSlot = MSCSymbolTableFind(&moduleObj->variableNames,
                                           name, strlen(name));
@@ -1754,15 +1751,15 @@ bool MSCHasVariable(MVM *vm, const char *module, const char *name) {
     return variableSlot != -1;
 }
 
-bool MSCHasModule(MVM *vm, const char *module) {
+bool MSCHasModule(Djuru *djuru, const char *module) {
     ASSERT(module != NULL, "Module cannot be NULL.");
 
-    Value moduleName = MSCStringFormatted(vm, "$", module);
-    MSCPushRoot(vm->gc, AS_OBJ(moduleName));
+    Value moduleName = MSCStringFormatted(djuru->vm, "$", module);
+    MSCPushRoot(djuru->vm->gc, AS_OBJ(moduleName));
 
-    Module *moduleObj = MSCGetModule(vm, moduleName);
+    Module *moduleObj = MSCGetModule(djuru->vm, moduleName);
 
-    MSCPopRoot(vm->gc); // moduleName.
+    MSCPopRoot(djuru->vm->gc); // moduleName.
     return moduleObj != NULL;
 }
 
@@ -1839,9 +1836,8 @@ MSCInterpretResult MSCInterpret(MVM *vm, const char *module,
     MSCPushRoot(vm->gc, (Object *) closure);
     Djuru *thread = MSCDjuruFrom(vm, closure);
     MSCPopRoot(vm->gc); // closure.
-    vm->apiStack = NULL;
 
     // return RESULT_SUCCESS;
-    return runInterpreter(vm, thread);
+    return runInterpreter(thread);
 }
 

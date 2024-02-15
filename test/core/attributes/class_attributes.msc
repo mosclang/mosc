@@ -13,5 +13,6 @@ kulu WalanDen {
 }
 
 nin item = WalanDen.kura();
-A.yira(item.suku.ladaw.yere)
-A.yira(item.suku.ladaw.tiidenw)
+A.yira(item.suku.ladaw.yere)    # expect: {swagger: {class: [Walan]}, gansan: {test: [tien]}}
+A.yira(item.suku.ladaw.tiidenw) # expect: {useCase: {gansan: {case: [gansan], skip: [tien, Will skip this test]}}}
+
