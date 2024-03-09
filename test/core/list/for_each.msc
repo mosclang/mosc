@@ -1,3 +1,4 @@
-nin b = "ooo"
-A.seben("--\n")
-A.yira()
+["one", "two", "three"].kelenkelen {it => A.yira(it)}
+# expect: one
+# expect: two
+# expect: three

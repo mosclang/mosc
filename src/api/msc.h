@@ -207,7 +207,7 @@ MSC_API MSCInterpretResult MSCCall(Djuru *djuru, MSCHandle *method);
 
 // Releases the reference stored in [handle]. After calling this, [handle] can
 // no longer be used.
-MSC_API void MSCReleaseHandle(Djuru *djuru, MSCHandle *handle);
+MSC_API void MSCReleaseHandle(MVM *vm, MSCHandle *handle);
 
 // The following functions are intended to be called from foreign methods or
 // finalizers. The interface Mosc provides to a foreign method is like a

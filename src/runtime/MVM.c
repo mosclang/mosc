@@ -1439,11 +1439,11 @@ MSCHandle *MSCMakeHandle(Djuru *djuru, Value value) {
     return handle;
 }
 
-void MSCReleaseHandle(Djuru *djuru, MSCHandle *handle) {
+void MSCReleaseHandle(MVM *vm, MSCHandle *handle) {
     ASSERT(handle != NULL, "Handle cannot be NULL.");
 
     // Update the VM's head pointer if we're releasing the first handle.
-    if (djuru->vm->handles == handle) djuru->vm->handles = handle->next;
+    if (vm->handles == handle) vm->handles = handle->next;
 
     // Unlink it from the list.
     if (handle->prev != NULL) handle->prev->next = handle->next;
@@ -1454,7 +1454,7 @@ void MSCReleaseHandle(Djuru *djuru, MSCHandle *handle) {
     handle->prev = NULL;
     handle->next = NULL;
     handle->value = NULL_VAL;
-    DEALLOCATE(djuru->vm, handle);
+    DEALLOCATE(vm, handle);
 }
 
 int MSCGetSlotCount(Djuru *djuru) {

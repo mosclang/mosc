@@ -56,8 +56,8 @@ static void call(Djuru* djuru)
         MSCInterpretResult res =  MSCCall(djuru, method);
         if(MSCHasError(djuru)) {
             MSCSetSlotDouble(djuru, 0, 0);
-            MSCReleaseHandle(djuru, testClass);
-            MSCReleaseHandle(djuru, method);
+            MSCReleaseHandle(djuru->vm, testClass);
+            MSCReleaseHandle(djuru->vm, method);
             return;
         }
         // printf("Djuru state::: after call %d %p ==> %d\n", djuru->state, djuru->vm->djuru, res);
@@ -66,8 +66,8 @@ static void call(Djuru* djuru)
 
     double elapsed = (double)clock() / CLOCKS_PER_SEC - startTime;
 
-    MSCReleaseHandle(djuru, testClass);
-    MSCReleaseHandle(djuru, method);
+    MSCReleaseHandle(djuru->vm, testClass);
+    MSCReleaseHandle(djuru->vm, method);
 
     if (result == (1.0 + 2.0 + 3.0 + 4.0) * iterations)
     {

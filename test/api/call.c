@@ -113,17 +113,17 @@ int callRunTests(MVM* vm)
     }
     MSCCall(djuru, one);
 
-    MSCReleaseHandle(djuru, callClass);
-    MSCReleaseHandle(djuru, noParams);
-    MSCReleaseHandle(djuru, zero);
-    MSCReleaseHandle(djuru, one);
-    MSCReleaseHandle(djuru, two);
-    MSCReleaseHandle(djuru, getValue);
-    MSCReleaseHandle(djuru, value);
-    MSCReleaseHandle(djuru, unary);
-    MSCReleaseHandle(djuru, binary);
-    MSCReleaseHandle(djuru, subscript);
-    MSCReleaseHandle(djuru, subscriptSet);
+    MSCReleaseHandle(vm, callClass);
+    MSCReleaseHandle(vm, noParams);
+    MSCReleaseHandle(vm, zero);
+    MSCReleaseHandle(vm, one);
+    MSCReleaseHandle(vm, two);
+    MSCReleaseHandle(vm, getValue);
+    MSCReleaseHandle(vm, value);
+    MSCReleaseHandle(vm, unary);
+    MSCReleaseHandle(vm, binary);
+    MSCReleaseHandle(vm, subscript);
+    MSCReleaseHandle(vm, subscriptSet);
 
     return 0;
 }

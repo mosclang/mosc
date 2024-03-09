@@ -39,7 +39,7 @@ int callCallsExternRunTests(MVM *vm) {
 
     // We should have a single slot count for the return.
     printf("slots after %d\n", MSCGetSlotCount(djuru));
-    MSCReleaseHandle(djuru, call);
-    MSCReleaseHandle(djuru, apiClass);
+    MSCReleaseHandle(vm, call);
+    MSCReleaseHandle(vm, apiClass);
     return 0;
 }
