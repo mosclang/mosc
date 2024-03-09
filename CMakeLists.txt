@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.8)
+#set(CMAKE_C_COMPILER "gcc")
+#set(CMAKE_CXX_COMPILER "g++")
+
 project(mosc)
 
 set(CMAKE_C_STANDARD 99)
@@ -14,12 +17,13 @@ if(CMAKE_BUILD_TYPE STREQUAL Debug)
 endif()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Os -g")
 
 set(CMAKE_C_FLAGS "-Wall -Wextra")
+set(CMAKE_C_FLAGS_DEBUG "-g -O0")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_C_FLAGS_MINSIZEREL "-Os")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-Os -g")

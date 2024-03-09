@@ -156,7 +156,7 @@ void MSCFreeGC(GC *gc) {
     }
 
     // Free up the GC gray set.
-    gc->gray = (Object **) gc->vm->config.reallocateFn(gc->gray, 0, gc->vm->config.userData);
+    gc->gray = (Object **) gc->reallocator(gc->gray, 0, gc->userData);
     // DEALLOCATE(gc->vm, gc);
     // gc->vm = NULL;
 }

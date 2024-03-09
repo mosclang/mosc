@@ -1401,6 +1401,7 @@ void load(MVM *vm) {
     PRIMITIVE(vm->core.stringClass, "codePointYoro_(_)", string_codePointAt);
     PRIMITIVE(vm->core.stringClass, "bAkono(_)", string_contains);
     PRIMITIVE(vm->core.stringClass, "beBanNiinAye(_)", string_endsWith);
+    PRIMITIVE(vm->core.stringClass, "beBanNiin(_)", string_endsWith);
     PRIMITIVE(vm->core.stringClass, "aDayoro(_)", string_indexOf1);
     PRIMITIVE(vm->core.stringClass, "uDayoro(_,_)", string_indexOf2);
     PRIMITIVE(vm->core.stringClass, "iterate(_,_)", string_iterate);

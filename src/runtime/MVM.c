@@ -16,6 +16,7 @@
 
 #include "../meta/Kunfe.h"
 #include "../memory/Value.h"
+#include "../api/msc.h"
 
 #endif
 
@@ -285,7 +286,7 @@ void MSCFreeVM(MVM *vm) {
     // may try to use. Better to tell them about the bug early.
     ASSERT(vm->handles == NULL, "All handles have not been released.");
     DEALLOCATE(vm, vm->gc);
-
+    vm->config.reallocateFn(vm, 0, vm->config.userData);
 }
 
 void MSCCollectGarbage(MVM *vm) {
@@ -522,7 +523,7 @@ static void createClass(MVM *vm, int numFields, Module *module) {
 // Defines [methodValue] as a method on [classObj].
 //
 // Handles both foreign methods where [methodValue] is a string containing the
-// method's signature and Wren methods where [methodValue] is a function.
+// method's signature and Mosc methods where [methodValue] is a function.
 //
 // Aborts the current fiber if the method is a foreign method that could not be
 // found.
@@ -677,8 +678,9 @@ static Method *findExtensionMethod(MVM *vm, Class *classObj, int symbol) {
     if (classObj == NULL) {
         return NULL;
     }
-    Method *ret = &classObj->methods.data[symbol];
-    if (ret->type != METHOD_BLOCK) {
+
+    Method *ret = classObj->methods.count > symbol ? &classObj->methods.data[symbol]: NULL;
+    if (ret == NULL || ret->type != METHOD_BLOCK) {
         ret = findExtensionMethod(vm, classObj->superclass, symbol);
         if (ret != NULL && ret->type == METHOD_BLOCK) {
             // bind to the superclass for next call if needed
@@ -753,6 +755,7 @@ static MSCInterpretResult runInterpreter(register Djuru *djuru) {
     // Remember the current djuru so we can find it if a GC happens.
     vm->djuru = djuru;
     Djuru *callingDjuru = djuru;
+    CallFrame *fr = &djuru->frames[djuru->numOfFrames - 1];
     // djuru->state = DJURU_ROOT;
     djuru->state = djuru->entryState;
 
@@ -839,7 +842,7 @@ static MSCInterpretResult runInterpreter(register Djuru *djuru) {
 
 #else
 
-#define INTERPRET_LOOP                                                       \
+    #define INTERPRET_LOOP                                                       \
       loop:                                                                    \
         DEBUG_TRACE_INSTRUCTIONS();                                            \
         instruction = (Opcode)READ_BYTE()     ;                                  \
@@ -1200,7 +1203,6 @@ static MSCInterpretResult runInterpreter(register Djuru *djuru) {
         CASE_CODE(RETURN):
         {
             Value result = POP();
-            // printf("Return for djuru %p\n", djuru);
             MSCPopCallFrame(djuru);
 
             // Close any upvalues still in scope.
@@ -1226,10 +1228,10 @@ static MSCInterpretResult runInterpreter(register Djuru *djuru) {
                 // Store the result in the resuming djuru.
                 djuru->stackTop[-1] = result;
             } else if (djuru->frames[djuru->numOfFrames - 1].closure == NULL) {
+                if (djuru != callingDjuru && djuru->caller != callingDjuru) {
 
-                if (djuru != callingDjuru) {
-                    //Attempting to return to wrenCall from wrong fiber.
-                    abort();
+                    //Attempting to return to MSCCall from wrong djuru.
+                    // abort();
                 }
 
                 MSCPopCallFrame(djuru);
@@ -1479,7 +1481,7 @@ void MSCEnsureSlots(Djuru *djuru, int numSlots) {
     for (Value *p = djuru->stackTop; p < top; p++) {
         *p = NULL_VAL;
     }
-    djuru->stackTop = djuru->stackStart + numSlots;
+    djuru->stackTop = top;
 }
 
 

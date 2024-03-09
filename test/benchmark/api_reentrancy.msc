@@ -1,7 +1,7 @@
 kulu Benchmark {
   dunan dialen call(a)
 }
-kulu Test {
+#*kulu Test {
      # dialen method(a, b, c, d) { a + b + c + d }
      dialen method(a, b, c, d) { Djuru.tike("Error occured") }
 }
@@ -9,6 +9,6 @@ nin th = Djuru.kura {
     nin elapsed = Benchmark.call(3)
     A.yira("elapsed: ${elapsed}")
 }
-th.aladie()
+th.aladie()*#
 
-A.yira(":: ${th.fili}")
+# A.yira(":: ${th.fili}")

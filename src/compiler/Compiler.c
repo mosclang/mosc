@@ -383,6 +383,7 @@ static void initCompiler(Compiler *compiler, Parser *parser, Compiler *parent,
     compiler->enclosingClass = NULL;
     compiler->isInitializer = false;
     compiler->isExtension = false;
+    compiler->dotSource = EOF_TOKEN;
 
     // Initialize these to NULL before allocating in case a GC gets triggered in
     // the middle of initializing the compiler.

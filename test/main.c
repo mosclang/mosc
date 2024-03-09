@@ -12,7 +12,6 @@ static MVM *vm = NULL;
 
 
 int main(int argc, const char* argv[]) {
-    // printf("%zu, %zu", sizeof(Djuru),sizeof(Class));
     int handled = tryHandlingArgs(argc, argv);
     if(handled) return handled;
 
