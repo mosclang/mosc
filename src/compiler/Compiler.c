@@ -3267,7 +3267,7 @@ GrammarRule rules[] = {
         /* DIV_TOKEN                    5  */ INFIX_OPERATOR(PREC_FACTOR, "/"),
         /* MOD_TOKEN                    6  */ INFIX_OPERATOR(PREC_FACTOR, "%"),
         /* DOLLAR_INTERPOL_TOKEN        7  */ PREFIX(stringInterpolation),
-        /* LPAREN_TOKEN                 8  */ {grouping, NULL, NULL, PREC_CALL, NULL},
+        /* LPAREN_TOKEN                 8  */ {grouping, functionCall, NULL, PREC_CALL, NULL},
         /* RPAREN_TOKEN                 9  */ UNUSED,
         /* LBRACE_TOKEN                 10 */ PREFIX(map),
         /* RBRACE_TOKEN                 11 */ UNUSED,
