@@ -9,7 +9,11 @@
 #include "Parser.h"
 #include "../memory/Value.h"
 
+#ifdef MSC_DEBUG_DUMP_COMPILED_CODE
 
+#include "../runtime/debuger.h"
+
+#endif
 // The stack effect of each opcode. The index in the array is the opcode, and
 // the value is the stack effect of that instruction.
 static const int stackEffects[] = {
@@ -275,6 +279,8 @@ struct Compiler {
     int numAttributes;
     // Attributes for the next class or method.
     Map *attributes;
+    // Attributes for the next class or method.
+    Map *floatingAttributes;
 
 };
 
@@ -283,7 +289,7 @@ void classDefinition(Compiler *compiler, bool isExtern);
 
 static void disallowAttributes(Compiler *compiler);
 
-static void addToAttributeGroup(Compiler *compiler, Value group, Value key, Value value);
+static void addToAttributeGroup(Map* map, Compiler *compiler, Value group, Value key, Value value);
 
 static void emitClassAttributes(Compiler *compiler, ClassInfo *classInfo);
 
@@ -291,6 +297,8 @@ static void copyAttributes(Compiler *compiler, Map *into);
 
 static void copyMethodAttributes(Compiler *compiler, bool isExtern,
                                  bool isStatic, const char *fullSignature, int32_t length);
+
+static void functionCall(Compiler *compiler, bool canAssign);
 
 
 static void newCompilerUpvalue(CompilerUpvalue *thisValue, bool isLocal, int index) {
@@ -416,6 +424,7 @@ static void initCompiler(Compiler *compiler, Parser *parser, Compiler *parent,
     }
     compiler->numAttributes = 0;
     compiler->attributes = MSCMapFrom(parser->vm);
+    compiler->floatingAttributes = MSCMapFrom(parser->vm);
     compiler->function = MSCFunctionFrom(parser->vm, parser->module, compiler->numLocals);
     MSCInitClassFieldBuffer(&compiler->fieldTrackings);
 
@@ -433,6 +442,7 @@ void MSCMarkCompiler(Compiler *compiler, MVM *mvm) {
 
         MSCGrayObject((Object *) parent->function, mvm);
         MSCGrayObject((Object *) parent->attributes, mvm);
+        MSCGrayObject((Object *) parent->floatingAttributes, mvm);
         MSCGrayObject((Object *) parent->constants, mvm);
         if (parent->enclosingClass != NULL) {
             MSCBlackenSymbolTable(mvm, &parent->enclosingClass->fields);
@@ -968,9 +978,9 @@ static void signatureToString(Signature *signature,
             signatureParameterList(name, length, 1, '(', ')');
             break;
         case SIG_INITIALIZER:
-            memcpy(name, "kura ", 5);
-            memcpy(name + 5, signature->name, (size_t) signature->length);
-            *length = 5 + signature->length;
+            memcpy(name, "dilan ", 6);
+            memcpy(name + 6, signature->name, (size_t) signature->length);
+            *length = 6 + signature->length;
             signatureParameterList(name, length, signature->arity, '(', ')');
             break;
     }
@@ -2250,7 +2260,10 @@ void bareName(Compiler *compiler, bool canAssign, Variable variable) {
 
     // Emit the load instruction.
     loadVariable(compiler, &variable);
-
+    if (match(compiler, LPAREN_TOKEN)) {
+        // case of weele short hand on function
+        functionCall(compiler, canAssign);
+    }
     allowLineBeforeDot(compiler);
 }
 
@@ -2661,17 +2674,6 @@ static void namedCall(Compiler *compiler, bool canAssign, Opcode instruction) {
                 field(compiler, true, false, NULL);
                 return;
             }
-            /*consume(ASSIGN_TOKEN, "expected '=' keyword");
-            expression(compiler);
-            loadThis(compiler);
-            fieldSymbol = 0xff; // set it to max value
-            // emit a get_field code with field symbol
-            int symbol = signatureSymbol(compiler,&signature);
-            int slot = emitByteArg(compiler,OP_SET_FIELD, fieldSymbol);
-            emitShort(compiler,symbol);
-            trackField(this, slot, signature.name, signature.length,
-                       static_cast<uint8_t>(fieldSymbol));
-            return;*/
         }
         // Compile the assigned value.
         consume(compiler, ASSIGN_TOKEN, "expected '=' keyword");
@@ -2993,6 +2995,7 @@ static void functionCall(Compiler *compiler, bool canAssign) {
         finishArgumentList(compiler, &signature);
     }
     consume(compiler, RPAREN_TOKEN, "Expect ')' after arguments.");
+
     // Parse the block argument, if any.
     if (match(compiler, LBRACE_TOKEN)) {
         // Include the block argument in the arity.
@@ -3030,54 +3033,17 @@ static void functionCall(Compiler *compiler, bool canAssign) {
 
         endCompiler(&fnCompiler, blockName, blockLength + 15);
     }
-    emitShortArg(compiler, OP_CALL, signature.arity);
+    char signatureString[MAX_METHOD_SIGNATURE - MAX_METHOD_NAME];
+    char fullSignature[MAX_METHOD_SIGNATURE];
+    int length;
+    signatureToString(&signature, signatureString, &length);
+    // memmove(fullSignature, "weele", 5);
+    length = snprintf(fullSignature, MAX_METHOD_SIGNATURE, "%s%s", "weele", signatureString);
+    callMethod(compiler, signature.arity, fullSignature, length);
+    // emitShortArg(compiler, OP_CALL, signature.arity);
     // callSignature(compiler,OP_CALL_0, &signature);
 }
 
-static void lambdaCall(Compiler *compiler, bool canAssign) {
-    Signature signature = {"", 0, SIG_FUNCTION, 0};
-
-    // Parse the argument list.
-    ignoreNewlines(compiler);
-    // Allow empty an argument list.
-    if (peek(compiler) != RPAREN_TOKEN) {
-        finishArgumentList(compiler, &signature);
-    }
-    Compiler fnCompiler;
-    initCompiler(&fnCompiler, compiler->parser, compiler, false);
-    // initCompiler(&fnCompiler, compiler->parser, compiler, false);
-
-    // Make a dummy signature to track the arity.
-    Signature fnSignature = {"", 0, SIG_FUNCTION, 0};
-
-    // Parse the parameter list, if any.
-    // Parse the parameter list, if any.
-    bool hasParen = match(compiler, LPAREN_TOKEN);
-    bool hasParam = hasParen || (peek(compiler) == ID_TOKEN &&
-                                 (peekNext(compiler) == COMMA_TOKEN ||
-                                  peekNext(compiler) == ARROW_TOKEN));
-    if (hasParam) {
-        finishParameterList(&fnCompiler, &fnSignature);
-        if (hasParen) consume(compiler, RPAREN_TOKEN, "Expect ')' after function parameters.");
-        consume(compiler, ARROW_TOKEN, "Expect '=>' after function parameters.");
-    }
-
-    fnCompiler.function->arity = fnSignature.arity;
-
-    finishBody(&fnCompiler);
-
-    // Name the function based on the method its passed to.
-    char blockName[MAX_METHOD_SIGNATURE + 15];
-    int blockLength;
-    signatureToString(&signature, blockName, &blockLength);
-    memmove(blockName + blockLength, " block argument", 16);
-
-    endCompiler(&fnCompiler, blockName, blockLength + 15);
-
-
-    emitShortArg(compiler, OP_CALL, signature.arity);
-    // callSignature(compiler,OP_CALL_0, &signature);
-}
 
 static void and_(Compiler *compiler, bool canAssign) {
     ignoreNewlines(compiler);
@@ -3301,7 +3267,7 @@ GrammarRule rules[] = {
         /* DIV_TOKEN                    5  */ INFIX_OPERATOR(PREC_FACTOR, "/"),
         /* MOD_TOKEN                    6  */ INFIX_OPERATOR(PREC_FACTOR, "%"),
         /* DOLLAR_INTERPOL_TOKEN        7  */ PREFIX(stringInterpolation),
-        /* LPAREN_TOKEN                 8  */ {grouping, functionCall, NULL, PREC_CALL, NULL},
+        /* LPAREN_TOKEN                 8  */ {grouping, NULL, NULL, PREC_CALL, NULL},
         /* RPAREN_TOKEN                 9  */ UNUSED,
         /* LBRACE_TOKEN                 10 */ PREFIX(map),
         /* RBRACE_TOKEN                 11 */ UNUSED,
@@ -3415,14 +3381,14 @@ static void parsePrecedence(Compiler *compiler, Precedence precedence) {
     // expressions that are valid lvalues -- names, subscripts, fields, etc. --
     // we pass in whether or not it appears in a context loose enough to allow
     // "=". If so, it will parse the "=" itself and handle it appropriately.
-    bool canAssign = precedence <= PREC_NULLISH;
+    bool canAssign = precedence <= PREC_NULLISH; // TODO: should we just check is < or <= ??
     prefix(compiler, canAssign);
 
     while (precedence <= rules[compiler->parser->current.type].precedence) {
 
         nextToken(compiler->parser);
         GrammarFn infix = rules[compiler->parser->previous.type].infix;
-        infix(compiler, canAssign);
+        if (infix) infix(compiler, canAssign);
     }
 }
 
@@ -3478,20 +3444,20 @@ static bool matchAttribute(Compiler *compiler) {
                     value = consumeLiteral(compiler,
                                            "Expect a Bool, Num, String or Identifier literal for an attribute value.");
                 }
-                if (runtimeAccess) addToAttributeGroup(compiler, NULL_VAL, key, value);
+                addToAttributeGroup(runtimeAccess ? compiler->attributes: compiler->floatingAttributes, compiler, NULL_VAL, key, value);
             } else if (match(compiler, LPAREN_TOKEN)) {
                 ignoreNewlines(compiler);
                 if (match(compiler, RPAREN_TOKEN)) {
                     Value key = group;
                     Value value = NULL_VAL;
-                    if (runtimeAccess) addToAttributeGroup(compiler, NULL_VAL, key, value);
+                    addToAttributeGroup(runtimeAccess ? compiler->attributes: compiler->floatingAttributes, compiler, NULL_VAL, key, value);
                 } else if (isLiteral(compiler) && peekNext(compiler) != ASSIGN_TOKEN) {
                     Value key = group;
                     Value value = consumeLiteral(compiler,
                                                  "Expect a Bool, Num, String or Identifier literal for an attribute value.");
                     ignoreNewlines(compiler);
                     consume(compiler, RPAREN_TOKEN, "Expect ) after attribute value.");
-                    if (runtimeAccess) addToAttributeGroup(compiler, NULL_VAL, key, value);
+                    addToAttributeGroup(runtimeAccess ? compiler->attributes: compiler->floatingAttributes, compiler, NULL_VAL, key, value);
                 } else {
                     while (peek(compiler) != RPAREN_TOKEN) {
                         consume(compiler, ID_TOKEN, "Expect name for attribute key.");
@@ -3501,7 +3467,7 @@ static bool matchAttribute(Compiler *compiler) {
                             value = consumeLiteral(compiler,
                                                    "Expect a Bool, Num, String or Identifier literal for an attribute value.");
                         }
-                        if (runtimeAccess) addToAttributeGroup(compiler, group, key, value);
+                        addToAttributeGroup(runtimeAccess ? compiler->attributes: compiler->floatingAttributes, compiler, group, key, value);
                         ignoreNewlines(compiler);
                         if (!match(compiler, COMMA_TOKEN)) break;
                         ignoreNewlines(compiler);
@@ -3523,6 +3489,62 @@ static bool matchAttribute(Compiler *compiler) {
     }
 
     return false;
+}
+
+static void emitCallAttribute(Compiler *compiler, Signature *signature, Variable *classVariable) {
+
+    // Signature fn = {"weele", 5, SIG_FUNCTION, signature->arity};
+    signature->type = SIG_FUNCTION;
+    int size = signature->length;
+    char fullSignature[MAX_METHOD_SIGNATURE];
+    signatureToString(signature, fullSignature, &size);
+
+    Compiler fnCompiler;
+    initCompiler(&fnCompiler, compiler->parser, compiler, true);
+    loadVariable(&fnCompiler, classVariable);
+    callMethod(&fnCompiler, signature->arity, fullSignature, size);
+    emitOp(&fnCompiler, OP_RETURN);
+    endCompiler(&fnCompiler, fullSignature, size);
+    // define weele function on the class
+    Signature fn = {"weele", 5, SIG_FUNCTION, signature->arity};
+    signatureToString(&fn, fullSignature, &size);
+    int symbol = methodSymbol(compiler, fullSignature, size);
+    defineMethod(compiler, classVariable, true, symbol);
+}
+
+static void
+handleCompilerMethodAttributes(Compiler *compiler, Map *attributes, Variable *classVariable, Signature *signature,
+                               bool isStatic, bool isExtern) {
+    if(attributes == NULL) {
+        return;
+    }
+
+    for (uint32_t attrIdx = 0; attrIdx < attributes->capacity; attrIdx++) {
+        const MapEntry *attrEntry = &attributes->entries[attrIdx];
+        if (IS_UNDEFINED(attrEntry->key)) {
+            continue;
+        }
+        if (IS_NULL(attrEntry->key)) {
+            // not group attributes
+            Map *map = AS_MAP(attrEntry->value);
+            handleCompilerMethodAttributes(compiler, map, classVariable, signature, isStatic, isExtern);
+            continue;
+        }
+        String *key = AS_STRING(attrEntry->key);
+        if (strcmp("weele", key->value) == 0) {
+            emitCallAttribute(compiler, signature, classVariable);
+        }
+    }
+}
+
+static void handleCompilerAttributes(Compiler *compiler, Variable *classVariable, Signature *signature, bool isStatic,
+                                     bool isExtern) {
+    if (compiler->floatingAttributes == NULL) {
+        return;
+    }
+
+    handleCompilerMethodAttributes(compiler, compiler->floatingAttributes, classVariable, signature, isStatic,
+                                   isExtern);
 }
 
 // Compiles a method definition inside a class body.
@@ -3572,7 +3594,6 @@ static bool method(Compiler *compiler, Variable *classVariable, bool isStatic, b
     char fullSignature[MAX_METHOD_SIGNATURE];
     int length;
     signatureToString(&signature, fullSignature, &length);
-
     // Copy any attributes the compiler collected into the enclosing class
     copyMethodAttributes(compiler, isExtern, isStatic, fullSignature, length);
 
@@ -3616,8 +3637,12 @@ static bool method(Compiler *compiler, Variable *classVariable, bool isStatic, b
 
         defineMethod(compiler, classVariable,
                      true, constructorSymbol);
+        signature.
+                type = SIG_INITIALIZER;
+        handleCompilerAttributes(compiler, classVariable, &signature, isStatic, isExtern);
     }
 // delete compiler->enclosingClass->signature;
+    MSCMapClear(compiler->floatingAttributes, compiler->parser->vm);
     return true;
 }
 
@@ -3919,7 +3944,7 @@ static void disallowAttributes(Compiler *compiler) {
 }
 
 // Add an attribute to a given group in the compiler attribues map
-static void addToAttributeGroup(Compiler *compiler,
+static void addToAttributeGroup(Map* map, Compiler *compiler,
                                 Value group, Value key, Value value) {
     MVM *vm = compiler->parser->vm;
 
@@ -3927,10 +3952,10 @@ static void addToAttributeGroup(Compiler *compiler,
     if (IS_OBJ(key)) MSCPushRoot(vm->gc, AS_OBJ(key));
     if (IS_OBJ(value)) MSCPushRoot(vm->gc, AS_OBJ(value));
 
-    Value groupMapValue = MSCMapGet(compiler->attributes, group);
+    Value groupMapValue = MSCMapGet(map, group);
     if (IS_UNDEFINED(groupMapValue)) {
         groupMapValue = OBJ_VAL(MSCMapFrom(vm));
-        MSCMapSet(compiler->attributes, vm, group, groupMapValue);
+        MSCMapSet(map, vm, group, groupMapValue);
     }
 
     //we store them as a map per so we can maintain duplicate keys
@@ -4050,6 +4075,7 @@ static void copyAttributes(Compiler *compiler, Map *into) {
     }
 
     MSCMapClear(compiler->attributes, vm);
+    // MSCMapClear(compiler->floatingAttributes, vm);
 }
 
 // Copy the current attributes stored in the compiler into the method specific

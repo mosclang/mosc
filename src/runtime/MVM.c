@@ -145,6 +145,15 @@ static void methodNotFound(MVM *vm, Class *classObj, int symbol) {
                                           OBJ_VAL(classObj->name), vm->methodNames.data[symbol]->value);
 }
 
+static bool ensureFunction(MVM *vm, Value value) {
+    if(!IS_CLOSURE(value)) {
+        vm->djuru->error = MSCStringFormatted(vm,
+                                              "Can't make a call on a non function value");
+        return false;
+    }
+    return true;
+}
+
 
 // Handles the current fiber having aborted because of an error.
 //
@@ -679,7 +688,7 @@ static Method *findExtensionMethod(MVM *vm, Class *classObj, int symbol) {
         return NULL;
     }
 
-    Method *ret = classObj->methods.count > symbol ? &classObj->methods.data[symbol]: NULL;
+    Method *ret = classObj->methods.count > symbol ? &classObj->methods.data[symbol] : NULL;
     if (ret == NULL || ret->type != METHOD_BLOCK) {
         ret = findExtensionMethod(vm, classObj->superclass, symbol);
         if (ret != NULL && ret->type == METHOD_BLOCK) {
@@ -842,7 +851,7 @@ static MSCInterpretResult runInterpreter(register Djuru *djuru) {
 
 #else
 
-    #define INTERPRET_LOOP                                                       \
+#define INTERPRET_LOOP                                                       \
       loop:                                                                    \
         DEBUG_TRACE_INSTRUCTIONS();                                            \
         instruction = (Opcode)READ_BYTE()     ;                                  \
@@ -921,11 +930,16 @@ static MSCInterpretResult runInterpreter(register Djuru *djuru) {
         {
             int numArgs = READ_SHORT() + 1;
             Value *args = djuru->stackTop - numArgs;
-            Closure *closure = AS_CLOSURE(args[0]);
-            STORE_FRAME();
-            callFunction(djuru, closure, numArgs);
-            LOAD_FRAME();
-            DISPATCH();
+            // make sure args[0] is closure, else hit runtime error
+            if (!ensureFunction(vm, args[0])) {
+                RUNTIME_ERROR();
+            } else {
+                Closure *closure = AS_CLOSURE(args[0]);
+                STORE_FRAME();
+                callFunction(djuru, closure, numArgs);
+                LOAD_FRAME();
+                DISPATCH();
+            }
         }
 
 
