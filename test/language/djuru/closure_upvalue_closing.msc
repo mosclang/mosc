@@ -12,7 +12,7 @@ kulu Test {
     }
 }
 nin djuru = Test.hi()
-A.yira(djuru.weele()) # expect: 1
-A.yira(djuru.weele()) # expect: 2
+A.yira(djuru()) # expect: 1
+A.yira(djuru()) # expect: 2
 A.yira(djuru.weele()) # expect: 3
 A.yira(djuru.weele()) # expect: 4

@@ -1,5 +1,5 @@
 tii test(fn) {
-    fn.weele(30)
+    fn(30)
 }
 nin a = 0
 test(Tii.kura { v =>

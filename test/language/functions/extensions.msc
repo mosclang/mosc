@@ -1,0 +1,20 @@
+kulu Ball {
+    nin value
+    @weele
+    dilan kura(v) {
+        ale.value = v
+    }
+}
+
+tii Ball.test => "Test from ball ${ale.value}"
+dialen tii Ball.new(v) {
+    A.yira(ale)
+    segin niin Ball(v)
+}
+tii Ball.bv =(v) { ale.value = v }
+tii Ball.+(v) { ale.value = ale.value  + v }
+
+nin b = Ball(12)
+A.yira(b.test) # expect: Test from ball 12
+b.bv = 14
+A.yira(b.test) # expect: Test from ball 14

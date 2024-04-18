@@ -289,7 +289,7 @@ void classDefinition(Compiler *compiler, bool isExtern);
 
 static void disallowAttributes(Compiler *compiler);
 
-static void addToAttributeGroup(Map* map, Compiler *compiler, Value group, Value key, Value value);
+static void addToAttributeGroup(Map *map, Compiler *compiler, Value group, Value key, Value value);
 
 static void emitClassAttributes(Compiler *compiler, ClassInfo *classInfo);
 
@@ -1780,6 +1780,17 @@ static void finishBody(Compiler *compiler) {
 
     emitOp(compiler, OP_RETURN);
 }
+static void finishExpressionBody(Compiler *compiler) {
+    expression(compiler);
+
+    if (compiler->isInitializer) {
+        // If the initializer body evaluates to a value, discard it.
+        emitOp(compiler, OP_POP);
+        // The receiver is always stored in the first local slot.
+        emitOp(compiler, OP_LOAD_LOCAL_0);
+    }
+    emitOp(compiler, OP_RETURN);
+}
 
 // Gets the symbol for a method with [signature].
 static int signatureSymbol(Compiler *compiler, Signature *signature) {
@@ -1835,6 +1846,9 @@ static void functionDefinition(Compiler *compiler, bool isStatic) {
     if (signature.type == SIG_INITIALIZER) {
         error(compiler, "A constructor cannot be outside a 'kulu' definition");
     }
+    if(className== NULL && signature.type != SIG_FUNCTION) {
+        error(compiler, "Invalid %s definition outside a 'kulu' definition", signature.type == SIG_GETTER ? "'getter'": signature.type == SIG_SETTER ?"'setter'": (signature.type == SIG_SUBSCRIPT || signature.type == SIG_SUBSCRIPT_SETTER) ? "'subscript'": "'function'");
+    }
 
     // Include the full signature in debug messages in stack traces.
     char fullSignature[MAX_METHOD_SIGNATURE];
@@ -1842,16 +1856,19 @@ static void functionDefinition(Compiler *compiler, bool isStatic) {
     signatureToString(&signature, fullSignature, &length);
 
 
-    int functionSymbol = -1;
+    int functionSymbol;
     if (className != NULL) {
         functionSymbol = signatureSymbol(compiler, &signature);
     } else {
         functionSymbol = declareFunction(compiler, signature.name, nameLength);
     }
     // declareMethod(compiler,&signature, fullSignature, length);
-
-    consume(compiler, LBRACE_TOKEN, "Expect '{' to begin function body.");
-    finishBody(&functionCompiler);
+    if (match(compiler, ARROW_TOKEN)) {
+        finishExpressionBody(&functionCompiler);
+    } else {
+        consume(compiler, LBRACE_TOKEN, "Expect '{' to begin function body.");
+        finishBody(&functionCompiler);
+    }
     functionCompiler.function->arity = signature.arity;
     endCompiler(&functionCompiler, fullSignature, length);
 
@@ -3444,20 +3461,23 @@ static bool matchAttribute(Compiler *compiler) {
                     value = consumeLiteral(compiler,
                                            "Expect a Bool, Num, String or Identifier literal for an attribute value.");
                 }
-                addToAttributeGroup(runtimeAccess ? compiler->attributes: compiler->floatingAttributes, compiler, NULL_VAL, key, value);
+                addToAttributeGroup(runtimeAccess ? compiler->attributes : compiler->floatingAttributes, compiler,
+                                    NULL_VAL, key, value);
             } else if (match(compiler, LPAREN_TOKEN)) {
                 ignoreNewlines(compiler);
                 if (match(compiler, RPAREN_TOKEN)) {
                     Value key = group;
                     Value value = NULL_VAL;
-                    addToAttributeGroup(runtimeAccess ? compiler->attributes: compiler->floatingAttributes, compiler, NULL_VAL, key, value);
+                    addToAttributeGroup(runtimeAccess ? compiler->attributes : compiler->floatingAttributes, compiler,
+                                        NULL_VAL, key, value);
                 } else if (isLiteral(compiler) && peekNext(compiler) != ASSIGN_TOKEN) {
                     Value key = group;
                     Value value = consumeLiteral(compiler,
                                                  "Expect a Bool, Num, String or Identifier literal for an attribute value.");
                     ignoreNewlines(compiler);
                     consume(compiler, RPAREN_TOKEN, "Expect ) after attribute value.");
-                    addToAttributeGroup(runtimeAccess ? compiler->attributes: compiler->floatingAttributes, compiler, NULL_VAL, key, value);
+                    addToAttributeGroup(runtimeAccess ? compiler->attributes : compiler->floatingAttributes, compiler,
+                                        NULL_VAL, key, value);
                 } else {
                     while (peek(compiler) != RPAREN_TOKEN) {
                         consume(compiler, ID_TOKEN, "Expect name for attribute key.");
@@ -3467,7 +3487,8 @@ static bool matchAttribute(Compiler *compiler) {
                             value = consumeLiteral(compiler,
                                                    "Expect a Bool, Num, String or Identifier literal for an attribute value.");
                         }
-                        addToAttributeGroup(runtimeAccess ? compiler->attributes: compiler->floatingAttributes, compiler, group, key, value);
+                        addToAttributeGroup(runtimeAccess ? compiler->attributes : compiler->floatingAttributes,
+                                            compiler, group, key, value);
                         ignoreNewlines(compiler);
                         if (!match(compiler, COMMA_TOKEN)) break;
                         ignoreNewlines(compiler);
@@ -3501,7 +3522,6 @@ static void emitCallAttribute(Compiler *compiler, Signature *signature, Variable
 
     Compiler fnCompiler;
     initCompiler(&fnCompiler, compiler->parser, compiler, true);
-    loadVariable(&fnCompiler, classVariable);
     callMethod(&fnCompiler, signature->arity, fullSignature, size);
     emitOp(&fnCompiler, OP_RETURN);
     endCompiler(&fnCompiler, fullSignature, size);
@@ -3515,7 +3535,7 @@ static void emitCallAttribute(Compiler *compiler, Signature *signature, Variable
 static void
 handleCompilerMethodAttributes(Compiler *compiler, Map *attributes, Variable *classVariable, Signature *signature,
                                bool isStatic, bool isExtern) {
-    if(attributes == NULL) {
+    if (attributes == NULL) {
         return;
     }
 
@@ -3587,7 +3607,7 @@ static bool method(Compiler *compiler, Variable *classVariable, bool isStatic, b
 
     if (isStatic && signature.type == SIG_INITIALIZER) {
         error(compiler,
-              "A constructor cannot be static.");
+              "A constructor cannot be dialen.");
     }
 
 // Include the full signature in debug messages in stack traces.
@@ -3612,11 +3632,13 @@ static bool method(Compiler *compiler, Variable *classVariable, bool isStatic, b
         methodCompiler.parser->vm->
                 compiler = methodCompiler.parent;
     } else {
-
-        consume(compiler, LBRACE_TOKEN,
-                "Expect '{' to begin method body.");
-
-        finishBody(&methodCompiler);
+        if (match(compiler, ARROW_TOKEN)) {
+            finishExpressionBody(&methodCompiler);
+        } else {
+            consume(compiler, LBRACE_TOKEN,
+                    "Expect '{' to begin method body.");
+            finishBody(&methodCompiler);
+        }
         methodCompiler.function->arity = signature.arity;
         endCompiler(&methodCompiler, fullSignature, length);
     }
@@ -3944,7 +3966,7 @@ static void disallowAttributes(Compiler *compiler) {
 }
 
 // Add an attribute to a given group in the compiler attribues map
-static void addToAttributeGroup(Map* map, Compiler *compiler,
+static void addToAttributeGroup(Map *map, Compiler *compiler,
                                 Value group, Value key, Value value) {
     MVM *vm = compiler->parser->vm;
 

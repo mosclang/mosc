@@ -8,9 +8,9 @@ kulu D {
 }
 
 kulu AB {
-    @!weele
-    dilan kura() {}
+    @weele
+    dilan kura(v) {}
 }
 
 
-AB.kura()
+AB(12)

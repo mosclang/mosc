@@ -275,7 +275,7 @@ DEF_FN_CALL(15)
 DEF_FN_CALL(16)
 
 DEF_PRIMITIVE(fn_toString) {
-    RETURN_VAL(CONST_STRING(djuru, "<tii>"));
+    RETURN_VAL(CONST_STRING(djuru->vm, "<tii>"));
 }
 
 // Creates a new list of size args[1], with all elements initialized to args[2].

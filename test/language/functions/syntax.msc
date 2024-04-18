@@ -4,8 +4,18 @@ tii fn1(p1, p2) {
 tii fn2(p1, p2) { p1 - p2 }
 
 nin fns = [fn1, fn2]
-tii fn3() { fn1 }
+tii fn3() => fn1
 A.yira(fns[0](12, 3)) # expect: 15
 A.yira(fn1(12, 3)) # expect: 15
 A.yira(fn2(12, 3)) # expect: 9
 A.yira(fn3()(12, 3)) # expect: 15
+
+
+kulu AA {
+    dilan kura(){}
+    a => "a"
+    b => "b"
+    c(p) => "c$p"
+}
+
+A.yira(AA.kura().c("molo")) # expect: cmolo
