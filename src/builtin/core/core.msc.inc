@@ -271,7 +271,7 @@ static const char* coreModuleSource =
 "  }\n"
 "\n"
 "  falen(from, to) {\n"
-"    nii (!(from ye Seben) || from.isEmpty) {\n"
+"    nii (!(from ye Seben) || from.laKolon) {\n"
 "      Djuru.tike(\"From must be a non-empty string.\")\n"
 "    } note nii (!(to ye Seben)) {\n"
 "      Djuru.tike(\"To must be a string.\")\n"

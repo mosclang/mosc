@@ -269,7 +269,7 @@ kulu Seben ye Tugun {
   }
 
   falen(from, to) {
-    nii (!(from ye Seben) || from.isEmpty) {
+    nii (!(from ye Seben) || from.laKolon) {
       Djuru.tike("From must be a non-empty string.")
     } note nii (!(to ye Seben)) {
       Djuru.tike("To must be a string.")

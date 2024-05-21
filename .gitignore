@@ -3,3 +3,4 @@ cmake-*/
 .idea/
 bin/
 dump.txt
+build/
