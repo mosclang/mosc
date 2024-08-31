@@ -301,36 +301,7 @@ static void copyMethodAttributes(Compiler *compiler, bool isExtern,
 static void functionCall(Compiler *compiler, bool canAssign);
 
 
-static void newCompilerUpvalue(CompilerUpvalue *thisValue, bool isLocal, int index) {
-    thisValue->index = index;
-    thisValue->isLocal = isLocal;
-}
 
-static void newLocal(Local *local, const char *name, int length, int depth, bool isUpvalue) {
-
-    local->name = name;
-    local->length = length;
-    local->depth = depth;
-    local->isUpvalue = isUpvalue;
-}
-
-
-static void newLoop(Loop *loop, int start, int exitJump, int body, int scope, Loop *parent) {
-
-    loop->start = start;
-    loop->exitJump = exitJump;
-    loop->body = body;
-    loop->scopeDepth = scope;
-    loop->enclosing = parent;
-}
-
-
-static void newSignature(Signature *sign, const char *name, int length, SignatureType type, int arity) {
-    sign->length = length;
-    sign->name = name;
-    sign->type = type;
-    sign->arity = arity;
-}
 
 
 static void newClassInfo(ClassInfo *classInfo, String *name, bool isExtern, bool inStatic) {
@@ -994,68 +965,6 @@ static int methodSymbol(Compiler *compiler, const char *name, int length) {
                                 &compiler->parser->vm->methodNames, name, (size_t) length);
 }
 
-/**
- * Generate a setter fnction for a field
- * [LOAD_PARAM? SET_THIS_FIELD]
- * [OP_LOAD_LOCAL_1, OP_STORE_FIELD]
- * @param classVariable
- * @param field
- * @param name
- * @param length
- * @return
- */
-static void
-emitSetter(Compiler *compiler, Variable *classVariable, int field, const char *name, int length, bool isStatic) {
-    Signature setter = {name, length, SIG_SETTER, 1};
-    int size = length;
-    char fullSignature[MAX_METHOD_SIGNATURE];
-    signatureToString(&setter, fullSignature, &size);
-    int symbol = methodSymbol(compiler, fullSignature, size);
-
-    if (isDeclared(&compiler->enclosingClass->methods, symbol)) {
-        return;
-    }
-
-    Compiler fnCompiler;
-    initCompiler(&fnCompiler, compiler->parser, compiler, true);
-    emitOp(&fnCompiler, OP_LOAD_LOCAL_1);// load the param
-    emitByteArg(&fnCompiler, OP_STORE_FIELD_THIS, field);
-    emitOp(&fnCompiler, OP_NULL);
-    emitOp(&fnCompiler, OP_RETURN);
-    endCompiler(&fnCompiler, fullSignature, size);
-    defineMethod(compiler, classVariable,
-                 isStatic, symbol);
-}
-
-
-/**
- * Generate a getter for a field
- * [LOAD_THIS_FIELD]
- * [OP_LOAD_FIELD]
- * @param classVariable
- * @param field
- * @param name
- * @param length
- * @return
- */
-void emitGetter(Compiler *compiler, Variable *classVariable, int field, const char *name, int length, bool isStatic) {
-    Signature getter = {name, length, SIG_GETTER, 0};
-    int size = length;
-    char fullSignature[MAX_METHOD_SIGNATURE];
-    signatureToString(&getter, fullSignature, &size);
-    int symbol = methodSymbol(compiler, fullSignature, size);
-
-    if (isDeclared(&compiler->enclosingClass->methods, symbol)) {
-        return;
-    }
-    Compiler fnCompiler;
-    initCompiler(&fnCompiler, compiler->parser, compiler, true);
-    emitByteArg(&fnCompiler, OP_LOAD_FIELD_THIS, field);
-    emitOp(&fnCompiler, OP_RETURN);
-    endCompiler(&fnCompiler, fullSignature, size);
-    defineMethod(compiler, classVariable, isStatic, symbol);
-}
-
 // Declares a variable in the current scope whose name is the given token.
 //
 // If [token] is `NULL`, uses the previously consumed token. Returns its symbol.
@@ -1359,7 +1268,6 @@ void loadLocal(Compiler *compiler, int slot) {
     }
     emitByteArg(compiler, OP_LOAD_LOCAL, slot);
 }
-
 
 typedef void (*GrammarFn)(Compiler *, bool canAssign);
 
@@ -2284,6 +2192,80 @@ void bareName(Compiler *compiler, bool canAssign, Variable variable) {
     allowLineBeforeDot(compiler);
 }
 
+
+
+/**
+ * Generate a setter fnction for a field
+ * [LOAD_PARAM? SET_THIS_FIELD]
+ * [OP_LOAD_LOCAL_1, OP_STORE_FIELD]
+ * @param classVariable
+ * @param field
+ * @param name
+ * @param length
+ * @return
+ */
+static void
+emitSetter(Compiler *compiler, Variable *classVariable, int field, const char *name, int length, bool isStatic) {
+    Signature setter = {name, length, SIG_SETTER, 1};
+    int size = length;
+    char fullSignature[MAX_METHOD_SIGNATURE];
+    signatureToString(&setter, fullSignature, &size);
+    int symbol = methodSymbol(compiler, fullSignature, size);
+
+   if (isDeclared((isStatic ? &compiler->enclosingClass->staticMethods : &compiler->enclosingClass->methods), symbol)) {
+        return;
+    }
+
+    Compiler fnCompiler;
+    initCompiler(&fnCompiler, compiler->parser, compiler, true);
+    emitOp(&fnCompiler, OP_LOAD_LOCAL_1);// load the param
+    if(!isStatic) { 
+        emitByteArg(&fnCompiler, OP_STORE_FIELD_THIS, field);
+    } else {
+        emitByteArg(&fnCompiler, OP_STORE_UPVALUE, findUpvalue(&fnCompiler, name, length));
+    }
+    emitOp(&fnCompiler, OP_NULL);
+    emitOp(&fnCompiler, OP_RETURN);
+    endCompiler(&fnCompiler, fullSignature, size);
+    defineMethod(compiler, classVariable,
+                 isStatic, symbol);
+}
+
+
+/**
+ * Generate a getter for a field
+ * [LOAD_THIS_FIELD]
+ * [OP_LOAD_FIELD]
+ * @param classVariable
+ * @param field
+ * @param name
+ * @param length
+ * @return
+ */
+void emitGetter(Compiler *compiler, Variable *classVariable, int field, const char *name, int length, bool isStatic) {
+    Signature getter = {name, length, SIG_GETTER, 0};
+    int size = length;
+    char fullSignature[MAX_METHOD_SIGNATURE];
+    signatureToString(&getter, fullSignature, &size);
+    int symbol = methodSymbol(compiler, fullSignature, size);
+
+    if (isDeclared((isStatic ? &compiler->enclosingClass->staticMethods : &compiler->enclosingClass->methods), symbol)) {
+        return;
+    }
+    Compiler fnCompiler;
+    initCompiler(&fnCompiler, compiler->parser, compiler, true);
+    if(!isStatic) {
+        emitByteArg(&fnCompiler, OP_LOAD_FIELD_THIS, field);
+    } else {
+       emitByteArg(&fnCompiler, OP_LOAD_UPVALUE, findUpvalue(&fnCompiler, name, length));
+    }
+    emitOp(&fnCompiler, OP_RETURN);
+    endCompiler(&fnCompiler, fullSignature, size);
+    defineMethod(compiler, classVariable, isStatic, symbol);
+}
+
+
+
 // Compiles an "import" statement.
 //
 // An import compiles to a series of instructions. Given:
@@ -2425,26 +2407,35 @@ static bool staticField(Compiler *compiler, bool canAssign, bool declaring, Vari
 
     // Look up the name in the scope chain.
     Token *token = &compiler->parser->previous;
-
+    bool assignment = peek(compiler) == ASSIGN_TOKEN;
     // If this is the first time we've seen this static field, implicitly
     // define it as a variable in the scope surrounding the class definition.
     if (resolveLocal(compiler, token->start, token->length) == -1) {
         int symbol = declareVariable(compiler, NULL);
-
-        // Implicitly initialize it to null.
-        emitOp(compiler, OP_NULL);
         defineVariable(compiler, symbol);
+        if(!assignment) {
+            // Implicitly initialize it to null.
+            emitOp(compiler, OP_NULL);
+            if (!isPrivate(token->start, token->length)) {
+                emitSetter(compiler, classVariable, symbol, token->start, token->length, true);
+                emitGetter(compiler, classVariable, symbol, token->start, token->length, true);
+            }
+            return true;
+        }
     }
+  
     // It definitely exists now, so resolve it properly. This is different from
     // the above resolveLocal() call because we may have already closed over it
     // as an upvalue.
-    Variable variable = resolveName(compiler, token->start, token->length);
+    const char* varName = token->start;
+    int length = token->length;
+    Variable variable = resolveName(compiler, varName, length);
     bareName(compiler, true, variable);
     // if not private static field, expose a get and setter for the field
-    /*if (!isPrivate(token->start, token->length)) {
-        emitSetter(compiler, classVariable, variable.index, token->start, token->length, true);
-        emitGetter(compiler, classVariable, variable.index, token->start, token->length, true);
-    }*/
+    if (!isPrivate(varName, length)) {
+        emitSetter(compiler, classVariable, variable.index, varName, length, true);
+        emitGetter(compiler, classVariable, variable.index, varName, length, true);
+    }
     return true;
 }
 
@@ -2670,7 +2661,6 @@ static void namedCall(Compiler *compiler, bool canAssign, Opcode instruction) {
     // Get the token for the method name.
     Signature signature = signatureFromToken(compiler, SIG_GETTER);
 
-    // printf("Sign:::: %d (%.*s)\n", signature.type, signature.length, signature.name);
     if (canAssign && peek(compiler) == ASSIGN_TOKEN) {
         // x.d = 18; set field or method call
 
@@ -3702,6 +3692,7 @@ void classDefinition(Compiler *compiler, bool isExtern) {
     Variable classVariable;
     classVariable.scope = compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL;
     classVariable.index = declareNamedVariable(compiler);
+   
 
     // Create shared class name value
     Value classNameString = MSCStringFromCharsWithLength(compiler->parser->vm,
@@ -3723,7 +3714,7 @@ void classDefinition(Compiler *compiler, bool isExtern) {
     }
 
     // Store a placeholder for the number of fields argument. We don't know the
-    // count until we've compiled all the methods to see which fields are used.
+    // count until we've compiled all the class body to see which fields are declared.
     int numFieldsInstruction = -1;
     if (isExtern) {
         emitOp(compiler, OP_EXTERN_CLASS);
@@ -3738,7 +3729,6 @@ void classDefinition(Compiler *compiler, bool isExtern) {
     // into local variables declared in this scope. Methods that use them will
     // have upvalues referencing them.
     pushScope(compiler);
-
     if (match(compiler, SEMI_TOKEN) || peek(compiler) == EOL_TOKEN) {
 
         // end of class, a class with default constructor

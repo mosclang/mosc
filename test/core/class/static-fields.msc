@@ -1,0 +1,40 @@
+nin molo = {}
+nin molo2 = {}
+nin molo3 = {}
+kulu Keybord {
+    dialen nin _keys = {};
+    dialen keys {_keys}
+    dialen nin _togo = "Keybord"
+    dialen nin test = "Molo"
+    dialen nin test1
+    dialen test=(a) {
+        _togo = a
+    }
+    dialen init() {
+        _keys = {}
+    }
+    dialen update(key, v) {
+        _keys[key] = v
+    }
+}
+kulu Mouse {
+    dialen nin _buttons = {};
+    dialen nin _togo = "Molobala"
+    dialen test {_togo}
+     dialen buttons {_buttons};
+    dialen init() {
+        _buttons = {}
+    }
+    dialen update(key, v) {
+        _buttons[key] = v
+    }
+}
+
+# Keybord.init()
+# Mouse.init()
+
+Keybord.update("left", tien)
+Mouse.update("kk", tien)
+Keybord.test = "Keyyyy"
+Keybord.test1 = "Test1"
+A.yira("Mouse ${Mouse.test} ${Keybord.test} ${Keybord.test1}") # expect: Mouse Molobala Molo Test1
