@@ -143,6 +143,13 @@ static int dumpInstruction(MVM *vm, Function *fn, int i, int *lastLine) {
                    vm->methodNames.data[symbol]->value);
             break;
         }
+        case OP_CALL_X: {
+            int symbol = READ_SHORT();
+            int numArgs =READ_SHORT();
+            printf("CALL_X-%-11d %5d '%s'\n", numArgs, symbol,
+                   vm->methodNames.data[symbol]->value);
+            break;
+        }
 
         case OP_SUPER_0:
         case OP_SUPER_1:
@@ -165,6 +172,14 @@ static int dumpInstruction(MVM *vm, Function *fn, int i, int *lastLine) {
             int symbol = READ_SHORT();
             int superclass = READ_SHORT();
             printf("SUPER_%-10d %5d '%s' %5d\n", numArgs, symbol,
+                   vm->methodNames.data[symbol]->value, superclass);
+            break;
+        }
+        case OP_SUPER_X: {
+            int symbol = READ_SHORT();
+            int numArgs = READ_SHORT();
+            int superclass = READ_SHORT();
+            printf("SUPER_X-%-10d %5d '%s' %5d\n", numArgs, symbol,
                    vm->methodNames.data[symbol]->value, superclass);
             break;
         }

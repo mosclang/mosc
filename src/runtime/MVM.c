@@ -95,7 +95,7 @@ static Upvalue *captureUpvalue(MVM *vm, Djuru *djuru, Value *local) {
     if (upvalue != NULL && upvalue->value == local) return upvalue;
 
     // We've walked past vm local on the stack, so there must not be an
-    // upvalue for it already. Make a new one and link it in in the right
+    // upvalue for it already. Make a new one and link it in the right
     // place to keep the list sorted.
     Upvalue *createdUpvalue = MSCUpvalueFrom(vm, local);
     if (prevUpvalue == NULL) {
@@ -929,7 +929,7 @@ static MSCInterpretResult runInterpreter(register Djuru *djuru) {
         CASE_CODE(CALL):
         {
             int numArgs = READ_SHORT() + 1;
-            Value *args = djuru->stackTop - numArgs;
+            Value *args = djuru->stackTop - (numArgs);
             // make sure args[0] is closure, else hit runtime error
             if (!ensureFunction(vm, args[0])) {
                 RUNTIME_ERROR();
@@ -985,7 +985,16 @@ static MSCInterpretResult runInterpreter(register Djuru *djuru) {
             args = djuru->stackTop - numArgs;
             classObj = MSCGetClassInline(vm, args[0]);
             goto completeCall;
+            CASE_CODE(CALL_X):
+            method = NULL;
+            // Add one for the implicit receiver argument.
+            symbol = READ_SHORT();
+            numArgs = READ_SHORT() + 1;
+            // The receiver is the first argument.
+            args = djuru->stackTop - numArgs;
+            classObj = MSCGetClassInline(vm, args[0]);
 
+            goto completeCall;
             CASE_CODE(SUPER_0):
             CASE_CODE(SUPER_1):
             CASE_CODE(SUPER_2):
@@ -1014,7 +1023,18 @@ static MSCInterpretResult runInterpreter(register Djuru *djuru) {
             // The superclass is stored in a constant.
             classObj = AS_CLASS(fn->constants.data[READ_SHORT()]);
             goto completeCall;
+            CASE_CODE(SUPER_X):
+            method = NULL;
+            symbol = READ_SHORT();
+            // Add one for the implicit receiver argument.
+            numArgs = READ_SHORT() + 1;
+            // The receiver is the first argument.
+            args = djuru->stackTop - numArgs;
 
+            // The superclass is stored in a constant.
+            classObj = AS_CLASS(fn->constants.data[READ_SHORT()]);
+            
+            goto completeCall;
             completeCall:
             // If the class's method table doesn't include the symbol, bail.
             if (method == NULL && ((symbol >= classObj->methods.count ||

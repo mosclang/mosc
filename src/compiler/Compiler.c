@@ -758,6 +758,7 @@ static int getByteCountForArguments(const uint8_t *bytecode,
         case OP_IMPORT_VARIABLE:
             return 2;
 
+        case OP_CALL_X:
         case OP_SUPER_0:
         case OP_SUPER_1:
         case OP_SUPER_2:
@@ -776,6 +777,9 @@ static int getByteCountForArguments(const uint8_t *bytecode,
         case OP_SUPER_15:
         case OP_SUPER_16:
             return 4;
+
+        case OP_SUPER_X:
+            return 6;
 
         case OP_CLOSURE: {
             int constant = (bytecode[ip + 1] << 8) | bytecode[ip + 2];
@@ -828,6 +832,12 @@ void MSCBindMethodCode(Class *classObj, Function *fn) {
             case OP_SUPER_16: {
                 // Fill in the constant slot with a reference to the superclass.
                 int constant = (fn->code.data[ip + 3] << 8) | fn->code.data[ip + 4];
+                fn->constants.data[constant] = OBJ_VAL(classObj->superclass);
+                break;
+            }
+            case OP_SUPER_X: {
+                 // Fill in the constant slot with a reference to the superclass.
+                int constant = (fn->code.data[ip + 5] << 8) | fn->code.data[ip + 6];
                 fn->constants.data[constant] = OBJ_VAL(classObj->superclass);
                 break;
             }
@@ -1443,11 +1453,25 @@ void loadCoreVariable(Compiler *compiler, const char *name) {
 }
 
 // Compiles a method call with [numArgs] for a method with [name] with [length].
+void callMethodOrFunction(Compiler *compiler, int numArgs, const char *name,
+                int length, bool method) {
+    int symbol = methodSymbol(compiler, name, length);
+    if(numArgs <= 16) {
+        emitShortArg(compiler, (Opcode) (OP_CALL_0 + numArgs), symbol);
+    } else {
+        // generic call
+        if(!method) {
+            emitShortArg(compiler, OP_CALL, numArgs);
+        } else {
+            emitShortArg(compiler, OP_CALL_X, symbol);
+            emitShort(compiler, numArgs);
+        }
+    }
+}
 void callMethod(Compiler *compiler, int numArgs, const char *name,
                 int length) {
-    int symbol = methodSymbol(compiler, name, length);
-    emitShortArg(compiler, (Opcode) (OP_CALL_0 + numArgs), symbol);
-}
+    return  callMethodOrFunction(compiler, numArgs, name, length, true);
+ }
 void superMethodCall(Compiler *compiler, int numArgs, const char *name,
                 int length) {
     int symbol = methodSymbol(compiler, name, length);
@@ -2570,7 +2594,7 @@ void callSignature(Compiler *compiler, Opcode instruction,
     if (signature->arity <= 16) {
         emitShortArg(compiler, (Opcode) (instruction + signature->arity), symbol);
     } else {
-        emitShortArg(compiler, OP_CALL, symbol);
+        emitShortArg(compiler, (Opcode) (instruction + 17), symbol);
         emitShort(compiler, signature->arity);
     }
 
@@ -3049,7 +3073,8 @@ static void functionCall(Compiler *compiler, bool canAssign) {
     signatureToString(&signature, signatureString, &length);
     // memmove(fullSignature, "weele", 5);
     length = snprintf(fullSignature, MAX_METHOD_SIGNATURE, "%s%s", "weele", signatureString);
-    callMethod(compiler, signature.arity, fullSignature, length);
+    callMethodOrFunction(compiler, signature.arity, fullSignature, length, false);
+    
     // emitShortArg(compiler, OP_CALL, signature.arity);
     // callSignature(compiler,OP_CALL_0, &signature);
 }
@@ -3427,8 +3452,13 @@ static void createConstructor(Compiler *compiler, Signature *signature,
                             ? OP_EXTERN_CONSTRUCT : OP_CONSTRUCT);
 
     // Run its initializer.
-    emitShortArg(&methodCompiler, (Opcode) (OP_CALL_0 + signature->arity),
+    if(signature->arity <= 16) {
+        emitShortArg(&methodCompiler, (Opcode) (OP_CALL_0 + signature->arity),
                  initializerSymbol);
+    } else {
+        emitShortArg(&methodCompiler, (Opcode) (OP_CALL_X), initializerSymbol);
+        emitShort(&methodCompiler, signature->arity);
+    }
 
     // Return the instance.
     emitOp(&methodCompiler, OP_RETURN);

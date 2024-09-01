@@ -59,63 +59,66 @@ OPCODE(CALL_13 , -13)           // = 38
 OPCODE(CALL_14 , -14)           // = 39
 OPCODE(CALL_15 , -15)           // = 40
 OPCODE(CALL_16 , -16)           // = 41
+OPCODE(CALL_X , 0)              // = 42
 
-OPCODE(SUPER_0 , 0)             // = 42
-OPCODE(SUPER_1 , -1)            // = 43
-OPCODE(SUPER_2 , -2)            // = 44
-OPCODE(SUPER_3 , -3)            // = 45
-OPCODE(SUPER_4 , -4)            // = 46
-OPCODE(SUPER_5 , -5)            // = 47
-OPCODE(SUPER_6 , -6)            // = 48
-OPCODE(SUPER_7 , -7)            // = 49
-OPCODE(SUPER_8 , -8)            // = 50
-OPCODE(SUPER_9 , -9)            // = 51
-OPCODE(SUPER_10 , -10)          // = 52
-OPCODE(SUPER_11 , -11)          // = 53
-OPCODE(SUPER_12 , -12)          // = 54
-OPCODE(SUPER_13 , -13)          // = 55
-OPCODE(SUPER_14 ,-14)           // = 56
-OPCODE(SUPER_15 , -15)          // = 57
-OPCODE(SUPER_16 , -16)          // = 58
+OPCODE(SUPER_0 , 0)             // = 43
+OPCODE(SUPER_1 , -1)            // = 44
+OPCODE(SUPER_2 , -2)            // = 45
+OPCODE(SUPER_3 , -3)            // = 46
+OPCODE(SUPER_4 , -4)            // = 47
+OPCODE(SUPER_5 , -5)            // = 48
+OPCODE(SUPER_6 , -6)            // = 49
+OPCODE(SUPER_7 , -7)            // = 50
+OPCODE(SUPER_8 , -8)            // = 51
+OPCODE(SUPER_9 , -9)            // = 52
+OPCODE(SUPER_10 , -10)          // = 53
+OPCODE(SUPER_11 , -11)          // = 54
+OPCODE(SUPER_12 , -12)          // = 55
+OPCODE(SUPER_13 , -13)          // = 56
+OPCODE(SUPER_14 ,-14)           // = 57
+OPCODE(SUPER_15 , -15)          // = 58
+OPCODE(SUPER_16 , -16)          // = 59
+OPCODE(SUPER_X , 0)              // = 60
 
-OPCODE(JUMP , 0)                // = 59
-OPCODE(LOOP , 0)                // = 60
-OPCODE(JUMP_IF , -1)            // = 61
-OPCODE(AND , -1)                // = 62
-OPCODE(OR , -1)                 // = 63
+OPCODE(JUMP , 0)                // = 61
+OPCODE(LOOP , 0)                // = 62
+OPCODE(JUMP_IF , -1)            // = 63
+OPCODE(AND , -1)                // = 64
+OPCODE(OR , -1)                 // = 65
 
-OPCODE(CLOSE_UPVALUE, -1)       // = 64
+OPCODE(CLOSE_UPVALUE, -1)       // = 66
 
-OPCODE(RETURN, 0)               // = 65
+OPCODE(RETURN, 0)               // = 67
 
-OPCODE(CLOSURE , 1)             // = 66
-
-
-OPCODE(CONSTRUCT , 0)           // = 67
-
-OPCODE(EXTERN_CONSTRUCT , 0)    // = 68
-
-OPCODE(CLASS , -1)              // = 69
-
-OPCODE(END_CLASS , -2)          // = 70
-
-OPCODE(EXTERN_CLASS , -1)       // = 71
-
-OPCODE(METHOD_INSTANCE , -2)    // = 72
-
-OPCODE(METHOD_STATIC , -2)      // = 73
-
-OPCODE(END_MODULE , 1)          // = 74
-
-OPCODE(IMPORT_MODULE , 1)       // = 75
+OPCODE(CLOSURE , 1)             // = 68
 
 
-OPCODE(IMPORT_VARIABLE , 1)     // = 76
+OPCODE(CONSTRUCT , 0)           // = 69
 
-OPCODE(CALL, 0)                 // = 77
+OPCODE(EXTERN_CONSTRUCT , 0)    // = 70
 
-OPCODE(FIELD, 0)                 // = 78
+OPCODE(CLASS , -1)              // = 71
 
-OPCODE(END , 0)                 // = 79
+OPCODE(END_CLASS , -2)          // = 72
 
-OPCODE(LOAD_ON , 1)              // = 80
+OPCODE(EXTERN_CLASS , -1)       // = 73
+
+OPCODE(METHOD_INSTANCE , -2)    // = 74
+
+OPCODE(METHOD_STATIC , -2)      // = 75
+
+OPCODE(END_MODULE , 1)          // = 76
+
+OPCODE(IMPORT_MODULE , 1)       // = 77
+
+
+OPCODE(IMPORT_VARIABLE , 1)     // = 78
+
+OPCODE(CALL, 0)                 // = 79
+
+OPCODE(FIELD, 0)                 // = 80
+
+OPCODE(LOAD_ON , 1)              // = 81
+
+OPCODE(END , 0)                 // = 82
+

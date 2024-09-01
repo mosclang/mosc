@@ -1,0 +1,35 @@
+kulu Weirdo {
+    dilan kura() {}
+    dialen longArgsFn(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) {
+        segin niin "$a$b$c$d$e$f$g$h$i$j$k$l$m$n$o$p$q$r$s$t$u$v$w$x$y$z"
+    }
+    longArgsFn(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) {
+        segin niin "$a$b$c$d$e$f$g$h$i$j$k$l$m$n$o$p$q$r$s$t$u$v$w$x$y$z"
+    }
+}
+
+kulu VeryWeirdo ye Weirdo {
+    nin state = "very"
+    dilan kura() {
+    }
+    dilan longKura(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) {
+
+    }
+    longArgsFn(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) {
+        segin niin "very" + faa.longArgsFn(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z)
+    }
+}
+
+nin weird = Weirdo.kura()
+
+A.yira(Weirdo.longArgsFn("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")) # expect: abcdefghijklmnopqrstuvwxyz
+A.yira(weird.longArgsFn("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")) # expect: abcdefghijklmnopqrstuvwxyz
+nin very = VeryWeirdo.kura()
+A.yira(very.longArgsFn("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")) # expect: veryabcdefghijklmnopqrstuvwxyz
+very = VeryWeirdo.longKura("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
+kulu VeryVeryWeirdo ye VeryWeirdo {
+    dilan longKura(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) {
+        faa(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z)
+    }
+}
+very = VeryVeryWeirdo.longKura("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z")
