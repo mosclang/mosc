@@ -1,0 +1,39 @@
+kulu Person {
+    nin type
+    nin from
+    dilan kura(t, f) {
+        ale.type = t
+        ale.from = f
+    }
+}
+kulu Malian ye Person {
+    nin name
+    dilan kura(n) {
+        faa("Malien", "Mali")
+        ale.name = n
+    }
+}
+nin malien = Malian.kura("Madou DOUMBIA")
+A.yira("${malien.name} from ${malien.from}") # expect: Madou DOUMBIA from Mali
+
+@!abstract
+kulu Bakan {
+    nin type = "Bakan"
+}
+kulu Missi ye Bakan {
+    nin sukuya = "Missi"
+    dilan kura() {
+    }
+}
+kulu MissiMusso ye Missi {
+    nin sin = 2
+    dilan kura() {
+    }
+}
+nin missi = Missi.kura()
+nin missiMusso = MissiMusso.kura()
+A.yira(missi.type) # expect: Bakan
+A.yira(missi.sukuya) # expect: Missi
+A.yira(missiMusso.type) # expect: Bakan
+A.yira(missiMusso.sukuya) # expect: Missi
+A.yira(missiMusso.sin) # expect: 2

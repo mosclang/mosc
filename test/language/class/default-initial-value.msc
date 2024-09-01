@@ -1,0 +1,20 @@
+kulu Test {
+    nin field = {}
+    nin arr = [1, 2, 3]
+    dilan kura() {
+        
+    }
+}
+kulu Test2 ye Test {
+    dilan kura() {
+        faa()
+    }
+}
+nin t1 = Test.kura()
+t1.field["k"] = "v"
+nin t2 = Test.kura();
+t2.arr.aFaraAkan(3)
+A.yira("${t2.field} - ${t1.field}") # expect: {} - {k: v}
+A.yira("${t1.arr} - ${t2.arr}") # expect: [1, 2, 3] - [1, 2, 3, 3]
+nin t3 = Test2.kura()
+A.yira(t3.arr) # expect: [1, 2, 3]
