@@ -242,6 +242,10 @@ Djuru *MSCGetCurrentDjuru(MVM *vm) {
     return vm->djuru;
 }
 
+MVM* MSCGetCurrentVm(Djuru* djuru) {
+    return djuru->vm;
+}
+
 void MSCInitConfig(MSCConfig *config) {
     config->reallocateFn = defaultReallocate;
     config->resolveModuleFn = NULL;

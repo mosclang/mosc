@@ -149,6 +149,11 @@ typedef struct {
     void *userData;
 } MSCConfig;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 MSC_API void MSCInitConfig(MSCConfig *config);
 
 MSC_API void MSCVMSetConfig(MVM* vm, MSCConfig *config);
@@ -414,4 +419,12 @@ MSC_API void *MSCGetUserData(MVM *vm);
 MSC_API void MSCSetUserData(MVM *vm, void *userData);
 
 MSC_API Djuru* MSCGetCurrentDjuru(MVM* vm);
+
+MSC_API MVM* MSCGetCurrentVm(Djuru* djuru);
+
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif //CPMSC_MSC_H
