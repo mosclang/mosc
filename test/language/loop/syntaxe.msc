@@ -1,0 +1,48 @@
+
+nin n = 0
+seginka 0..10 kono a {
+    n = a
+}
+A.yira(n) # expect: 10
+n = 0
+seginka (0...10 kono a kay niin 2) {
+    n = a
+}
+A.yira(n) # expect: 8
+
+n = 0
+seginka (0...10 kono a kay) {
+    n = a
+}
+A.yira(n) # expect: 9
+
+n = 0
+seginka (0..10 kono a kaj niin 2) {
+    n = a
+}
+
+A.yira(n) # expect: 0
+
+n = 0
+seginka (0...10 kono a kaj niin 2) {
+    n = a
+}
+
+A.yira(n) # expect: 1
+
+n = 0
+seginka (0...10 kono a kaj) {
+    n = a
+}
+
+A.yira(n) # expect: 0
+
+n = 0
+seginka 0...10 kono a kaj {
+    n = a
+}
+
+n = 0
+seginka 0...10 kono a kaj n = a
+
+A.yira(n) # expect: 0

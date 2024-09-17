@@ -1981,9 +1981,14 @@ static void forStatement(Compiler *compiler) {
     int iterSlot = addLocal(compiler, "iter ", 5);
 
     // parse the step and direction
-    bool up;
-    if (peek(compiler) == UP_TOKEN || peek(compiler) == DOWN_TOKEN) {
-        up = !match(compiler, DOWN_TOKEN);
+    bool up = false;
+    if ((up=match(compiler, UP_TOKEN)) || !(up = !match(compiler, DOWN_TOKEN))) {
+        // if(match(compiler, UP_TOKEN)) {
+        //     up = true;
+        // } else {
+        //      up = false;
+        //     consume(compiler, DOWN_TOKEN, "Expected down token");
+        // }
         match(compiler, WITH_TOKEN) ? expression(compiler) : emitConstant(compiler, NUM_VAL(1));
         if (!up) callMethod(compiler, 0, "-", 1);
     } else {
