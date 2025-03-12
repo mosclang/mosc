@@ -162,6 +162,12 @@ kulu Tugun {
   iterate(iterator) {
         ale.iterate(iterator, 1);
   }
+  aWalimaGansan(index) {
+    nii (index ye Funan) {
+      segin niin nii (index.damine < 0 || index.laban >= ale.hakan) [] note ale[index]
+    }
+    segin niin nii index < ale.hakan && index >= 0 ale[index] note gansan
+  }
 }
 kulu WalaTugun ye Tugun {
     nin _sequence;

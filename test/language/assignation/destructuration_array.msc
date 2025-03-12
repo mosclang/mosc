@@ -1,0 +1,8 @@
+nin a = [1, 2, 3]
+nin [f, s] = a
+A.yira(f) # expect: 1
+A.yira(s) # expect: 2
+nin [af, as, ...at] = []
+A.yira(af) # expect: gansan
+A.yira(as) # expect: gansan
+A.yira(at) # expect: []

@@ -1,0 +1,8 @@
+nin obj = {a: 1, b: 2}
+nin {a: oa, b: ob } = obj
+A.yira(oa) # expect: 1
+A.yira(ob) # expect: 2
+nin {a: ooa, b: oob, ...ooc} = {}
+A.yira(ooa) # expect: gansan
+A.yira(oob) # expect: gansan
+A.yira(ooc) # expect: {}

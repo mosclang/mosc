@@ -1585,7 +1585,7 @@ void handleDestructuration(Compiler *compiler, Pattern *pattern) {
                     loadLocal(compiler, tmpSlot);// load initial array
                     callMethod(compiler, 0, "hakan", 5);// get array size
                     callMethod(compiler, 1, "...(_)", 6);// create range from i to length
-                    callMethod(compiler, 1, "[_]", 3);// sublist
+                    callMethod(compiler, 1, "aWalimaGansan(_)", 16);// sublist
                     callMethod(compiler, 1, "aBeeFaraAkan_(_)", 16);
                     assignVariable(compiler, &item.variable);
                     break;
@@ -1593,7 +1593,7 @@ void handleDestructuration(Compiler *compiler, Pattern *pattern) {
                 loadLocal(compiler, tmpSlot);
                 Value index = NUM_VAL(i);
                 emitConstant(compiler, index);
-                callMethod(compiler, 1, "[_]", 3);
+                callMethod(compiler, 1, "aWalimaGansan(_)", 16);
                 handleDestructuration(compiler, &item);
             }
             MSCFreePatternBuffer(compiler->parser->vm, &elements);
