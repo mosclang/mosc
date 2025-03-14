@@ -1446,7 +1446,7 @@ void load(MVM *vm) {
     vm->core.rangeClass = AS_CLASS(MSCFindVariable(vm, coreModule, "Funan"));
     PRIMITIVE(vm->core.rangeClass, "kamine", range_from);
     PRIMITIVE(vm->core.rangeClass, "damine", range_from);
-    PRIMITIVE(vm->core.rangeClass, "laban", range_to);
+    // PRIMITIVE(vm->core.rangeClass, "laban", range_to);
     PRIMITIVE(vm->core.rangeClass, "kata", range_to);
     PRIMITIVE(vm->core.rangeClass, "fitini", range_min);
     PRIMITIVE(vm->core.rangeClass, "dan", range_max);

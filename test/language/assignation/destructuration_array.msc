@@ -6,3 +6,7 @@ nin [af, as, ...at] = []
 A.yira(af) # expect: gansan
 A.yira(as) # expect: gansan
 A.yira(at) # expect: []
+nin [line, ...headers] = "HTTP/1.1 200 OK\r\nServer: nginx/1.24.0 (Ubuntu)\r\nDate: Fri, 14 Mar 2025 16:13:38 GMT\r\nContent-Type: text/html\r\nContent-Length: 19100\r\nLast-Modified: Wed, 12 Mar 2025 12:47:02 GMT".faraFara("\r\n")
+A.yira(line) # expect: HTTP/1.1 200 OK
+A.yira(headers) # expect: [Server: nginx/1.24.0 (Ubuntu), Date: Fri, 14 Mar 2025 16:13:38 GMT, Content-Type: text/html, Content-Length: 19100, Last-Modified: Wed, 12 Mar 2025 12:47:02 GMT]
+A.yira(headers.hakan) # expect: 5
