@@ -5,8 +5,10 @@ kulu Tii
 kulu Funan;
 kulu Gansan
 tii Funan.laban {
-  segin niin nii !ale.kunBala ale.dan - 1 note ale.dan
+  nin step = nii (ale.kata < ale.damine) -1 note 1
+  segin niin nii !ale.kunBala ale.kata - step note ale.kata
 }
+
 kulu A {
     dialen yira() {
          A.seben_("\n")
