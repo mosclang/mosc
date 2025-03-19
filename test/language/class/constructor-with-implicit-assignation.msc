@@ -1,0 +1,11 @@
+kulu Mogo {
+    nin togo
+    nin sii
+    dilan kura(ale.togo, ale.sii) {
+
+    }
+}
+
+nin mogo = Mogo.kura("Molobala", 20)
+A.yira(mogo.togo) # expect: Molobala
+A.yira(mogo.sii) # expect: 20

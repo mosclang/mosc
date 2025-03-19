@@ -19,3 +19,9 @@ kulu AA {
 }
 
 A.yira(AA.kura().c("molo")) # expect: cmolo
+
+kulu Test {
+    nin a
+    dilan kura(ale.a) {}
+}
+A.yira(Test.kura("Mo").a) # expect: Mo

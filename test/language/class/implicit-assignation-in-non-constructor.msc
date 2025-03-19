@@ -1,0 +1,10 @@
+kulu Mogo {
+    nin togo
+    nin sii
+    dilan kura(ale.togo, ale.sii) { 
+
+    }
+    test(ale.togo) {# expect error
+
+    }
+}
