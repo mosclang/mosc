@@ -4,8 +4,27 @@ kulu Mogo {
     dilan kura(ale.togo, ale.sii) {
 
     }
+    dilan kura([ale.togo, ale.sii]) {
+
+    }
+    dilan kura1({"name": ale.togo, age: ale.sii}) {
+        
+    }
+    dilan kura2({...ale.togo}) {
+        
+    }
 }
 
 nin mogo = Mogo.kura("Molobala", 20)
 A.yira(mogo.togo) # expect: Molobala
 A.yira(mogo.sii) # expect: 20
+nin mogo2 = Mogo.kura(["Molobala", 20])
+A.yira(mogo2.togo) # expect: Molobala
+A.yira(mogo2.sii) # expect: 20
+
+mogo2 = Mogo.kura1({name: "Molobla", age: 20})
+A.yira(mogo2.togo) # expect: Molobla
+A.yira(mogo2.sii) # expect: 20
+
+mogo2 = Mogo.kura2({name: "Molobla", age: 20})
+A.yira(mogo2.togo) # expect: {name: Molobla, age: 20}

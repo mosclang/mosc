@@ -1117,19 +1117,22 @@ int declareFunction(Compiler *compiler, const char *name, int length) {
 
     return addLocal(compiler, name, length);
 }
-
-// Parses a name token and declares a variable in the current scope with that
-// name. Returns its slot.
-int declareNamedVariable(Compiler *compiler) {
-    bool captureAssignation = false;
+static bool captureImplicitAssignation(Compiler* compiler) {
     if(match(compiler, THIS_TOKEN)) {
         // this may be a property affectation from param shortcut
         if(compiler->constructorsAssignments == NULL) {
             error(compiler, "keyword used outsed of constructor conext\n");
         }
         consume(compiler, DOT_TOKEN, "Expect dot after `ale`.");
-        captureAssignation = true;
+        return true;
     }
+    return false;
+}
+
+// Parses a name token and declares a variable in the current scope with that
+// name. Returns its slot.
+int declareNamedVariable(Compiler *compiler) {
+    bool captureAssignation = captureImplicitAssignation(compiler);
     consume(compiler, ID_TOKEN, "Expect variable name.");
     Token id = compiler->parser->previous;
     int ret = declareVariable(compiler, NULL);
@@ -1392,7 +1395,9 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
     Pattern ret;
     ret.alias = NULL;
     ret.parent = parent;
-    if (match(compiler, ID_TOKEN) || match(compiler, STRING_CONST_TOKEN)) {
+    bool captureAssignation = captureImplicitAssignation(compiler);
+    
+    if (match(compiler, ID_TOKEN) || (match(compiler, STRING_CONST_TOKEN) && !captureAssignation)) {
         ret.type = NONE_PATTERN;
         initToken(&ret.as.id, compiler->parser->previous.type, compiler->parser->previous.start,
                   compiler->parser->previous.length,
@@ -1408,16 +1413,22 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
                 // ret.variable = Variable(symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
             } else if (declare) {
                 int symbol = declareVariable(compiler, &ret.as.id);
+                if(captureAssignation && compiler->constructorsAssignments != NULL && symbol != - 1) {
+                    MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, ret.as.id);
+                }
                 newVariable(&ret.variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
                 initVariable(compiler, &ret.variable);
             }
         } else if (declare) {
             int symbol = declareVariable(compiler, &ret.as.id);
-
+            if(captureAssignation && compiler->constructorsAssignments != NULL && symbol != - 1) {
+                MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, ret.as.id);
+            }
             newVariable(&ret.variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
             initVariable(compiler, &ret.variable);
         }
     } else if (match(compiler, SPREAD_OR_REST_TOKEN)) {
+        captureAssignation = captureImplicitAssignation(compiler);
         consume(compiler, ID_TOKEN, "Expected name after rest pattern");
         ret.type = REST_PATTERN;
         initToken(&ret.as.id, compiler->parser->previous.type, compiler->parser->previous.start,
@@ -1425,6 +1436,9 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
                   compiler->parser->previous.line, compiler->parser->previous.value);
         if (declare) {
             int symbol = declareVariable(compiler, &ret.as.id);
+            if(captureAssignation && compiler->constructorsAssignments != NULL && symbol != - 1) {
+                MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, ret.as.id);
+            }
             newVariable(&ret.variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
             initVariable(compiler, &ret.variable);
         }
@@ -1437,8 +1451,13 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
             if (match(compiler, LBRACKET_TOKEN)) {
 
                 // possible key expression
-                int symbol = declareVariable(compiler, &ret.as.id);
-                newVariable(&ret.alias->variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
+                if(declare) {
+                    int symbol = declareVariable(compiler, &ret.as.id);
+                    if(captureAssignation && compiler->constructorsAssignments != NULL && symbol != - 1) {
+                        MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, ret.as.id);
+                    }
+                    newVariable(&ret.alias->variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
+                }
                 // initVariable(compiler, &ret.variable);
                 expression(compiler);
                 consume(compiler, RBRACKET_TOKEN, "Expected ']' after object key expression");
@@ -3299,6 +3318,11 @@ void constructorSignature(Compiler *compiler, Signature *signature) {
     compiler->constructorsAssignments = malloc(sizeof(TokenBuffer));
     MSCInitTokenBuffer(compiler->constructorsAssignments);
     finishParameterList(compiler, signature);
+    if(compiler->constructorsAssignments->count == 0) {
+        MSCFreeTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments);
+        free(compiler->constructorsAssignments);
+        compiler->constructorsAssignments = NULL;
+    }
     consume(compiler, RPAREN_TOKEN, "Expect ')' after parameters.");
 }
 
