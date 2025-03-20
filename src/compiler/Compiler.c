@@ -288,6 +288,7 @@ struct Compiler {
     // Attributes for the next class or method.
     Map *floatingAttributes;
     TokenBuffer *constructorsAssignments;
+    bool captureAssignation;
 };
 
 // Forward declarations
@@ -385,6 +386,7 @@ static void initCompiler(Compiler *compiler, Parser *parser, Compiler *parent,
     compiler->enclosingClass = NULL;
     compiler->isInitializer = false;
     compiler->constructorsAssignments = NULL;
+    compiler->captureAssignation = false;
     compiler->isExtension = false;
     compiler->dotSource = EOF_TOKEN;
 
@@ -1128,17 +1130,24 @@ static bool captureImplicitAssignation(Compiler* compiler) {
     }
     return false;
 }
+#define CAPTURE_ASSIGNATION(cap, symbol, tok)    \
+    if(compiler->constructorsAssignments != NULL)  {\
+        if(cap && symbol != - 1) { \
+            MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, tok); \
+        } else { \
+            MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, invalidToken()); \
+        } \
+    }
 
 // Parses a name token and declares a variable in the current scope with that
 // name. Returns its slot.
 int declareNamedVariable(Compiler *compiler) {
     bool captureAssignation = captureImplicitAssignation(compiler);
+    compiler->captureAssignation = compiler->captureAssignation || captureAssignation;
     consume(compiler, ID_TOKEN, "Expect variable name.");
     Token id = compiler->parser->previous;
     int ret = declareVariable(compiler, NULL);
-    if(captureAssignation && compiler->constructorsAssignments != NULL && ret != - 1) {
-        MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, id);
-    }
+    CAPTURE_ASSIGNATION(captureAssignation, ret, id);
     return ret;
 }
 
@@ -1413,17 +1422,13 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
                 // ret.variable = Variable(symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
             } else if (declare) {
                 int symbol = declareVariable(compiler, &ret.as.id);
-                if(captureAssignation && compiler->constructorsAssignments != NULL && symbol != - 1) {
-                    MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, ret.as.id);
-                }
+                CAPTURE_ASSIGNATION(captureAssignation, symbol, ret.as.id);
                 newVariable(&ret.variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
                 initVariable(compiler, &ret.variable);
             }
         } else if (declare) {
             int symbol = declareVariable(compiler, &ret.as.id);
-            if(captureAssignation && compiler->constructorsAssignments != NULL && symbol != - 1) {
-                MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, ret.as.id);
-            }
+            CAPTURE_ASSIGNATION(captureAssignation, symbol, ret.as.id);
             newVariable(&ret.variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
             initVariable(compiler, &ret.variable);
         }
@@ -1436,9 +1441,7 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
                   compiler->parser->previous.line, compiler->parser->previous.value);
         if (declare) {
             int symbol = declareVariable(compiler, &ret.as.id);
-            if(captureAssignation && compiler->constructorsAssignments != NULL && symbol != - 1) {
-                MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, ret.as.id);
-            }
+            CAPTURE_ASSIGNATION(captureAssignation, symbol, ret.as.id);
             newVariable(&ret.variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
             initVariable(compiler, &ret.variable);
         }
@@ -1453,9 +1456,7 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
                 // possible key expression
                 if(declare) {
                     int symbol = declareVariable(compiler, &ret.as.id);
-                    if(captureAssignation && compiler->constructorsAssignments != NULL && symbol != - 1) {
-                        MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, ret.as.id);
-                    }
+                    CAPTURE_ASSIGNATION(captureAssignation, symbol, ret.as.id);
                     newVariable(&ret.alias->variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
                 }
                 // initVariable(compiler, &ret.variable);
@@ -1773,6 +1774,7 @@ static void finishBody(Compiler *compiler) {
         ClassInfo *enclosingClass = getEnclosingClass(compiler);
         for (int i = 0; i < compiler->constructorsAssignments->count; i++) {
             Token token = compiler->constructorsAssignments->data[i];
+            if(token.type != ID_TOKEN) continue;
             int field = MSCSymbolTableEnsure(compiler->parser->vm,&enclosingClass->fields, token.start,
                 (size_t) token.length);
             emitOp(compiler, OP_LOAD_LOCAL_0 + 1 + i);

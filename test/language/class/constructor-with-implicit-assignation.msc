@@ -10,8 +10,8 @@ kulu Mogo {
     dilan kura1({"name": ale.togo, age: ale.sii}) {
         
     }
-    dilan kura2({...ale.togo}) {
-        
+    dilan kura2(sii, {...ale.togo}) {
+        ale.sii = sii
     }
 }
 
@@ -26,5 +26,6 @@ mogo2 = Mogo.kura1({name: "Molobla", age: 20})
 A.yira(mogo2.togo) # expect: Molobla
 A.yira(mogo2.sii) # expect: 20
 
-mogo2 = Mogo.kura2({name: "Molobla", age: 20})
+mogo2 = Mogo.kura2(12, {name: "Molobla", age: 20})
 A.yira(mogo2.togo) # expect: {name: Molobla, age: 20}
+A.yira(mogo2.sii) # expect: 12

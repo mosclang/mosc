@@ -114,6 +114,6 @@ typedef struct {
 
 Token newToken(TokenType type, const char *start, int length, int line, Value value);
 void initToken(Token* token, TokenType type, const char *start, int length, int line, Value value);
-
+Token invalidToken();
 
 #endif //CPMSC_TOKEN_H

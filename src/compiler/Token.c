@@ -14,6 +14,10 @@ Token newToken(TokenType type, const char *start, int length, int line, Value va
     token.line = line;
     return token;
 }
+Token invalidToken() {
+    Token token;
+    token.type = EOF;
+}
 void initToken(Token* token, TokenType type, const char *start, int length, int line, Value value) {
     token->length = (uint32_t) length;
     token->start = start;
