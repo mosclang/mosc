@@ -1130,14 +1130,15 @@ static bool captureImplicitAssignation(Compiler* compiler) {
     }
     return false;
 }
-#define CAPTURE_ASSIGNATION(cap, symbol, tok)    \
-    if(compiler->constructorsAssignments != NULL)  {\
-        if(cap && symbol != - 1) { \
-            MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, tok); \
-        } else { \
-            MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, invalidToken()); \
-        } \
+static inline void CAPTURE_ASSIGNATION(Compiler* compiler, int symbol, Token *token, bool capture) {
+    if(compiler->constructorsAssignments != NULL)  {
+        if(capture && symbol != - 1) {
+            MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, *token);
+        } else {
+            MSCWriteTokenBuffer(compiler->parser->vm, compiler->constructorsAssignments, invalidToken());
+        }
     }
+}
 
 // Parses a name token and declares a variable in the current scope with that
 // name. Returns its slot.
@@ -1147,7 +1148,7 @@ int declareNamedVariable(Compiler *compiler) {
     consume(compiler, ID_TOKEN, "Expect variable name.");
     Token id = compiler->parser->previous;
     int ret = declareVariable(compiler, NULL);
-    CAPTURE_ASSIGNATION(captureAssignation, ret, id);
+    CAPTURE_ASSIGNATION(compiler, ret, &id, captureAssignation);
     return ret;
 }
 
@@ -1422,13 +1423,13 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
                 // ret.variable = Variable(symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
             } else if (declare) {
                 int symbol = declareVariable(compiler, &ret.as.id);
-                CAPTURE_ASSIGNATION(captureAssignation, symbol, ret.as.id);
+                CAPTURE_ASSIGNATION(compiler, symbol, &ret.as.id, captureAssignation);
                 newVariable(&ret.variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
                 initVariable(compiler, &ret.variable);
             }
         } else if (declare) {
             int symbol = declareVariable(compiler, &ret.as.id);
-            CAPTURE_ASSIGNATION(captureAssignation, symbol, ret.as.id);
+            CAPTURE_ASSIGNATION(compiler, symbol, &ret.as.id, captureAssignation);
             newVariable(&ret.variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
             initVariable(compiler, &ret.variable);
         }
@@ -1441,7 +1442,7 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
                   compiler->parser->previous.line, compiler->parser->previous.value);
         if (declare) {
             int symbol = declareVariable(compiler, &ret.as.id);
-            CAPTURE_ASSIGNATION(captureAssignation, symbol, ret.as.id);
+            CAPTURE_ASSIGNATION(compiler, symbol, &ret.as.id, captureAssignation);
             newVariable(&ret.variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
             initVariable(compiler, &ret.variable);
         }
@@ -1456,7 +1457,7 @@ static Pattern parsePattern(Compiler *compiler, PatternType parent, bool declare
                 // possible key expression
                 if(declare) {
                     int symbol = declareVariable(compiler, &ret.as.id);
-                    CAPTURE_ASSIGNATION(captureAssignation, symbol, ret.as.id);
+                    CAPTURE_ASSIGNATION(compiler, symbol, &ret.as.id, captureAssignation);
                     newVariable(&ret.alias->variable, symbol, compiler->scopeDepth == -1 ? SCOPE_MODULE : SCOPE_LOCAL);
                 }
                 // initVariable(compiler, &ret.variable);

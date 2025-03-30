@@ -1,0 +1,13 @@
+kulu Diabi {
+  nin _data
+  nin _fili
+  dilan kura(ale._data, ale._fili) {
+  }
+  kolon => ale._fili
+  gnuman => ale._data
+  gnumanWalima => nii ale._fili == gansan ale._data note Djuru.tike(ale._fili)
+  gnana => ale.fili == gansan
+}
+
+nin resp = Diabi("Hello world", gansan)
+A.yira("Hhhh")
