@@ -1,6 +1,24 @@
-baara fib(n) {
-  nii(n < 2)  n
-  note fib(n - 1) + fib(n - 2);
+# baara fib(n) {
+#   nii(n < 2)  n
+#   note fib(n - 1) + fib(n - 2);
+# }
+
+# fib(40)
+
+kulu Test {
+  nin name
+  nin root
+  nin source
+  dilan kura(ale.name, ale.root, ale.source) {}
 }
 
-fib(40)
+kulu Testier ye Test {
+  nin yelema
+  dilan kura(name, root, source) {
+    faa(name, root, source)
+    ale.yelema =  nii (ale.source.bAkono("@")) { "Hoo" }  note ale.yelema = "TG"
+  }
+}
+
+nin test = Testier.kura("P1", "P2", "mosclang/vsce@matt")
+A.yira(test.yelema)

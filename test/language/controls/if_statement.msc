@@ -1,0 +1,20 @@
+nin a = 12
+nii a > 10 a = 10
+
+A.yira(a) # expect: 10
+
+nii a == 10 a = 20
+
+A.yira(a) # expect: 20
+
+nii a < 20 a = 20 note a = 30
+
+A.yira(a) # expect: 30
+
+a = nii a > 0 a + 2 note a - 2
+
+A.yira(a) # expect: 32
+
+a = nii a < 0 { a + 2 } note { a - 2 }
+
+A.yira(a) # expect: 30

@@ -2199,8 +2199,7 @@ static bool statement(Compiler *compiler, bool expr) {
         if (tokenType == EOL_TOKEN || tokenType == SEMI_TOKEN) {
             // If there's no expression after return, initializers should
             // return 'this' and regular methods should return null
-            // If there's no expression after return, initializers should
-            // return 'this' and regular methods should return null
+
             Opcode result = compiler->isInitializer ? OP_LOAD_LOCAL_0 : OP_NULL;
             emitOp(compiler, result);
         } else {
@@ -2216,25 +2215,30 @@ static bool statement(Compiler *compiler, bool expr) {
     } else if (match(compiler, WHILE_TILL_TOKEN)) {
         whileStatement(compiler);
     } else if (match(compiler, LBRACE_TOKEN)) {
-        // Block statement.
-        int tmpSlot = -1;
-        if (expr) {
+        if(!expr) {
             pushScope(compiler);
-            null(compiler, false);
-            tmpSlot = addLocal(compiler, "tmpBlck ", 8);
+            bool isExpr = finishBlock(compiler, expr);
+            popScope(compiler);
+            return isExpr;
         }
-        pushScope(compiler);
-        bool isExpr = finishBlock(compiler, expr);
-        if (tmpSlot != -1 && isExpr) {
-            // store block result before pop scope
-            emitByteArg(compiler, OP_STORE_LOCAL, tmpSlot);
-            // Block was an expression, so discard it.
-            emitOp(compiler, OP_POP);
-        }
-        popScope(compiler);
-        if (expr) {
-            softPopScope(compiler);
-        }
+        // Block statement.
+        Compiler blockCompiler;
+        initCompiler(&blockCompiler, compiler->parser, compiler, false);
+        bool isExpr = finishBlock(&blockCompiler, true);
+        emitOp(&blockCompiler, OP_RETURN);
+        endCompiler(&blockCompiler, "anon-block", 10);
+       
+        callMethod(compiler, 0, "weele()", 7);
+        // if (tmpSlot != -1) { /// 
+        //     // store block result before pop scope
+        //     emitByteArg(compiler, OP_STORE_LOCAL, tmpSlot);
+        //     // Block was an expression, so discard it.
+        //     emitOp(compiler, OP_POP);
+        // }
+
+        // if (expr) {///
+        //     softPopScope(compiler);
+        // }
         return isExpr;
     } else {
 
@@ -3184,7 +3188,6 @@ static void conditional(Compiler *compiler, bool canAssign) {
     // pop the comparision result
     emitByte(compiler, OP_POP);
     patchJump(compiler, finishJump);
-    // softPopScope(compiler);
 }
 
 void infixOp(Compiler *compiler, bool canAssign) {

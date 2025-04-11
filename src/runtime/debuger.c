@@ -460,7 +460,7 @@ static int disassembleInstruction(Chunk* chunk, int offset) {
 
 void MSCDumpStack(Djuru *fiber) {
     printf("(djuru %p):%d.%lu - %lu ", fiber, fiber->numOfFrames, (unsigned long)fiber->stackStart, (unsigned long)fiber->stackTop);
-    for (Value *slot = fiber->stackStart; slot < fiber->stackTop; slot++) {
+    for (Value *slot = fiber->stack; slot < fiber->stackTop; slot++) {
         MSCDumpValue(*slot);
         printf(" | ");
     }
