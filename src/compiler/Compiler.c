@@ -2229,19 +2229,8 @@ static bool statement(Compiler *compiler, bool expr) {
         endCompiler(&blockCompiler, "anon-block", 10);
        
         callMethod(compiler, 0, "weele()", 7);
-        // if (tmpSlot != -1) { /// 
-        //     // store block result before pop scope
-        //     emitByteArg(compiler, OP_STORE_LOCAL, tmpSlot);
-        //     // Block was an expression, so discard it.
-        //     emitOp(compiler, OP_POP);
-        // }
-
-        // if (expr) {///
-        //     softPopScope(compiler);
-        // }
         return isExpr;
     } else {
-
         // Expression statement.
         expression(compiler);
         if (!expr) emitOp(compiler, OP_POP);
