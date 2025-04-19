@@ -3,6 +3,11 @@ nin b = tumamin(nin a = 20) {
     note => a - 2
 }
 A.yira(b) # expect: 22
+
+tumamin(nin a = 20) {
+    >=20 => { a + 2 }
+    note => { a - 2 }
+}
 b = tumamin(nin a = 20) {
     >=20 => { a + 2 }
     note => { a - 2 }

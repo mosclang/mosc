@@ -4006,6 +4006,7 @@ static void whenExpression(Compiler *compiler, bool canAssign) {
             patchJump(compiler, elseJump);
             break;
         }
+        if(peek(compiler) == RBRACE_TOKEN) break;
 
         if (ifJump != -1) {
             // not the first case, emit else jump
