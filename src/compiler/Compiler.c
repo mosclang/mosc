@@ -3898,7 +3898,7 @@ void classDefinition(Compiler *compiler, bool isExtern) {
     
     int methodSymbol = declareMethod(compiler, &defaultInitSignature, "_init_ ()", 9);
     emitOp(classInfo.initCompiler, OP_RETURN);
-    endCompiler(classInfo.initCompiler, "", 0);
+    endCompiler(classInfo.initCompiler, "_init_ ()", 9);
 
     defineMethod(compiler, &classVariable, false, methodSymbol);
 

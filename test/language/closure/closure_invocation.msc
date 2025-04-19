@@ -1,0 +1,20 @@
+nin closure = Tii.kura {this, p => this.test }
+
+kulu Tester {
+    dilan kura() {}
+    test => "Hello"
+    closure(p) {
+        A.yira("$p-${ale.test}")
+    }
+    longFn(p1, p2, p3, p4, p5) {
+        A.yira("$p1-$p2-$p3-$p4-$p5 - ${ale.test}")
+    }
+}
+A.yira(closure.arity)
+nin test = Tester.kura()
+test.suku.tiidenw.kelenkelen { it =>
+    A.yira(it.bolono)
+}
+Tester.tiidenw[3].weeleAkan(test, ["Ahhh"])
+Tester.tiidenw[4].weeleAkan(test, ["Ahhh", "Ehhh", "Ihhh", "Oooo", "Uuuu"])
+# A.yira(closure.invoke())

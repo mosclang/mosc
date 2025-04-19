@@ -8,6 +8,7 @@
 #include "core/core.msc.inc"
 #include "../memory/Value.h"
 
+#include "../runtime/debuger.h"
 
 #include <float.h>
 #include <errno.h>
@@ -21,11 +22,10 @@ DEF_PRIMITIVE(bool_not) {
 }
 
 DEF_PRIMITIVE(bool_toString) {
-    MVM* vm = djuru->vm;
     if (AS_BOOL(args[0])) {
-        RETURN_VAL(CONST_STRING(vm, "tien"));
+        RETURN_VAL(CONST_STRING(djuru->vm, "tien"));
     } else {
-        RETURN_VAL(CONST_STRING(vm, "galon"));
+        RETURN_VAL(CONST_STRING(djuru->vm, "galon"));
     }
 }
 
@@ -48,6 +48,30 @@ DEF_PRIMITIVE(class_toString) {
 
 DEF_PRIMITIVE(class_attributes) {
     RETURN_VAL(AS_CLASS(args[0])->attributes);
+}
+
+DEF_PRIMITIVE(class_methods) {
+    Class *classObj = AS_CLASS(args[0]);
+    if (!classObj) {
+        RETURN_NULL;
+    }
+    List* list = MSCListFrom(djuru->vm, 0);
+    int index = 0;
+    for (size_t symbol = 0; symbol < classObj->methods.count; symbol++) {
+        Method *method = MSCClassGetMethod(djuru->vm, classObj, symbol);
+        if (method == NULL) continue;
+        Value tmp = OBJ_VAL(method->as.closure);
+        if(!IS_CLOSURE(tmp)) continue;
+        MSCListInsert(list, djuru->vm, tmp, index++);
+    }
+    RETURN_OBJ(list);
+}
+DEF_PRIMITIVE(method_signature) {
+    Closure *method = AS_CLOSURE(args[0]);
+    if (method == NULL) {
+        RETURN_NULL;
+    }
+    RETURN_OBJ(MSCStringFromConstChars(djuru->vm, method->fn->debug->name));
 }
 
 
@@ -227,6 +251,30 @@ DEF_PRIMITIVE(fn_new) {
 DEF_PRIMITIVE(fn_arity) {
     RETURN_NUM(AS_CLOSURE(args[0])->fn->arity);
 }
+DEF_PRIMITIVE(fn_invoke_on) {
+    if(!IS_LIST(args[2])) {
+        printf("Error:::::\n");
+        RETURN_ERROR("The second argument should be a list");
+    }
+    Closure* closure = AS_CLOSURE(args[0]);
+    List* list = AS_LIST(args[2]);
+    int count = list->elements.count;
+    if(count < closure->fn->arity) {
+        printf("Less args %d vs %d\n", count, closure->fn->arity);
+        RETURN_ERROR("Can call this function with less than the arity");
+    }
+    int numArgs = count + 1;
+    args[0] = args[1];
+    MSCEnsureStack(djuru, numArgs);
+    djuru->stackTop-=2;
+    for(int i = 1; i<= count; i++) {
+        args[i] = list->elements.data[i-1];
+        djuru->stackTop++;
+    }
+    callFunction(djuru, closure, numArgs);
+    
+    return false;
+}
 
 static void call_fn(Djuru *djuru, const Value *args, int numArgs) {
     // +1 to include the function itself.
@@ -316,7 +364,9 @@ DEF_PRIMITIVE(list_addCore) {
 // by the compiler when compiling list literals instead of using addAll() to
 // minimize stack churn.
 DEF_PRIMITIVE(list_addAllCore) {
-    if (!IS_LIST(args[1])) RETURN_ERROR("Spread element should be a list instance");
+    if (!IS_LIST(args[1])) {
+        RETURN_ERROR("Spread element should be a list instance");
+    }
     List *other = AS_LIST(args[1]);
     for (int i = 0; i < other->elements.count; i++) {
         MSCWriteValueBuffer(djuru->vm, &AS_LIST(args[0])->elements, other->elements.data[i]);
@@ -1260,6 +1310,8 @@ void load(MVM *vm) {
     PRIMITIVE(vm->core.classClass, "sebenma", class_toString);
     PRIMITIVE(vm->core.classClass, "ladaw", class_attributes);
 
+    PRIMITIVE(vm->core.classClass, "tiidenw", class_methods);
+
 
     // Finally, we can define Object's metaclass which is a subclass of Class.
     Class *objectMetaclass = defineClass(vm, coreModule, "Fen metaclass");
@@ -1302,6 +1354,9 @@ void load(MVM *vm) {
     PRIMITIVE(vm->core.fnClass->obj.classObj, "kura(_)", fn_new);
 
     PRIMITIVE(vm->core.fnClass, "arity", fn_arity);
+
+    PRIMITIVE(vm->core.fnClass, "bolono", method_signature);
+    PRIMITIVE(vm->core.fnClass, "weeleAkan(_,_)", fn_invoke_on);
 
     FUNCTION_CALL(vm->core.fnClass, "weele()", fn_call0);
     FUNCTION_CALL(vm->core.fnClass, "weele(_)", fn_call1);
