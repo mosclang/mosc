@@ -1,0 +1,33 @@
+kulu Class {
+    nin field
+    @weele
+    dilan kura(ale.field) {
+    }
+    say() {
+        A.yira(ale.field)
+    }
+    say(r) {
+        A.yira(ale.field)
+    }
+    test => "Hello"
+    longFn(p1, p2, p3, p4, p5) {
+        A.yira("$p1-$p2-$p3-$p4-$p5 - ${ale.test}")
+    }
+    dialen tester() {}
+}
+
+nin a = Class.kura("Hi")
+
+a.say() # expect: Hi
+nin methods = Class.tiidenw
+nin staticMethods = Class.suku.tiidenw
+
+nin say = methods.yoroMin { m => m.bolono == "say()"}.walanNa[0]
+say.weeleAkan(a, []) # expect: Hi
+nin constructor = staticMethods.yoroMin { m => m.bolono == "kura(_)"}.walanNa[0]
+a = constructor.weeleAkan(Class, ["Molo"])
+a.say() # expect: Molo
+say.weeleAkan(a, []) # expect: Molo
+nin longFn = methods.yoroMin { m => m.bolono == "longFn(_,_,_,_,_)"}.walanNa[0]
+
+longFn.weeleAkan(a, ["A", "B", "C", "D", "E"]) # expect: A-B-C-D-E - Hello
