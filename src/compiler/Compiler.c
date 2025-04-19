@@ -3521,8 +3521,10 @@ static void createConstructor(Compiler *compiler, Signature *signature,
 
     // Return the instance.
     emitOp(&methodCompiler, OP_RETURN);
-
-    endCompiler(&methodCompiler, "", 0);
+    int size = signature->length;
+    char fullSignature[MAX_METHOD_SIGNATURE];
+    signatureToString(signature, fullSignature, &size);
+    endCompiler(&methodCompiler, fullSignature, size);
 }
 
 
@@ -3600,7 +3602,8 @@ static void emitCallAttribute(Compiler *compiler, Signature *signature, Variable
     signature->type = SIG_FUNCTION;
     int size = signature->length;
     char fullSignature[MAX_METHOD_SIGNATURE];
-    signatureToString(signature, fullSignature, &size);
+    Signature fn = {"weele", 5, SIG_FUNCTION, signature->arity};
+    signatureToString(&fn, fullSignature, &size);
 
     Compiler fnCompiler;
     initCompiler(&fnCompiler, compiler->parser, compiler, true);
@@ -3608,8 +3611,7 @@ static void emitCallAttribute(Compiler *compiler, Signature *signature, Variable
     emitOp(&fnCompiler, OP_RETURN);
     endCompiler(&fnCompiler, fullSignature, size);
     // define weele function on the class
-    Signature fn = {"weele", 5, SIG_FUNCTION, signature->arity};
-    signatureToString(&fn, fullSignature, &size);
+   
     int symbol = methodSymbol(compiler, fullSignature, size);
     defineMethod(compiler, classVariable, true, symbol);
 }
