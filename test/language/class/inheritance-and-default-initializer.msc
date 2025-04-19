@@ -1,0 +1,11 @@
+@!else
+kulu Condition
+kulu Else ye Condition {
+    nin name
+    dilan kura(ale.name) {
+        # faa(name)
+    }
+}
+
+nin else = Else.kura("Molo")
+A.yira(else.name) # expect: Molo

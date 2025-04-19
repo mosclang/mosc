@@ -3726,7 +3726,12 @@ static bool method(Compiler *compiler, Variable *classVariable, bool isStatic, b
         }
         if (match(compiler, ARROW_TOKEN)) {
             finishExpressionBody(&methodCompiler);
+        } else if(signature.type == SIG_INITIALIZER && (match(compiler, SEMI_TOKEN) || peek(compiler) == EOL_TOKEN)) {
+            // Aallow semin after constructor or eol to mark the end of the body
+            emitOp(&methodCompiler, OP_LOAD_LOCAL_0);
+            emitOp(&methodCompiler, OP_RETURN);
         } else {
+            
             consume(compiler, LBRACE_TOKEN,
                     "Expect '{' to begin method body.");
             finishBody(&methodCompiler);
@@ -3832,15 +3837,16 @@ void classDefinition(Compiler *compiler, bool isExtern) {
     // into local variables declared in this scope. Methods that use them will
     // have upvalues referencing them.
     pushScope(compiler);
-    if (match(compiler, SEMI_TOKEN) || peek(compiler) == EOL_TOKEN) {
-
+    bool noBody = false;
+    if (match(compiler, SEMI_TOKEN) || peek(compiler) == EOL_TOKEN || peek(compiler) == EOF_TOKEN) {
+        noBody = true;
         // end of class, a class with default constructor
         compiler->enclosingClass = NULL;
         if (!isExtern) {
             compiler->function->code.data[numFieldsInstruction] = 0;
         }
-        popScope(compiler);
-        return;
+        // popScope(compiler);
+        // return;
     }
 
     ClassInfo classInfo;
@@ -3864,18 +3870,20 @@ void classDefinition(Compiler *compiler, bool isExtern) {
 
 
     compiler->enclosingClass = &classInfo;
+    if(!noBody) {
+        // Compile the method definitions.
+        consume(compiler, LBRACE_TOKEN, "Expect '{' after class declaration.");
+        matchLine(compiler);
+    
+        while (!match(compiler, RBRACE_TOKEN)) {
+            if (!classStatement(compiler, &classVariable)) break;
+            match(compiler, SEMI_TOKEN);
+            // Don't require a newline after the last definition.
+            if (match(compiler, RBRACE_TOKEN)) break;
+    
+            consumeLine(compiler, "Expect newline after definition in class.");
+        }
 
-    // Compile the method definitions.
-    consume(compiler, LBRACE_TOKEN, "Expect '{' after class declaration.");
-    matchLine(compiler);
-
-    while (!match(compiler, RBRACE_TOKEN)) {
-        if (!classStatement(compiler, &classVariable)) break;
-        match(compiler, SEMI_TOKEN);
-        // Don't require a newline after the last definition.
-        if (match(compiler, RBRACE_TOKEN)) break;
-
-        consumeLine(compiler, "Expect newline after definition in class.");
     }
 
     // If any attributes are present,

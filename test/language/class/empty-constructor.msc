@@ -1,0 +1,11 @@
+kulu Class {
+    nin a = "Hi"
+    dilan kura();
+    test() {
+        A.yira(ale.a)
+    }
+}
+
+nin class = Class.kura()
+
+class.test() # expect: Hi
