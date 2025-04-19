@@ -3602,13 +3602,15 @@ static void emitCallAttribute(Compiler *compiler, Signature *signature, Variable
     signature->type = SIG_FUNCTION;
     int size = signature->length;
     char fullSignature[MAX_METHOD_SIGNATURE];
-    Signature fn = {"weele", 5, SIG_FUNCTION, signature->arity};
-    signatureToString(&fn, fullSignature, &size);
+    // Signature fn = {"weele", 5, SIG_FUNCTION, signature->arity};
+    signatureToString(signature, fullSignature, &size);
 
     Compiler fnCompiler;
     initCompiler(&fnCompiler, compiler->parser, compiler, true);
     callMethod(&fnCompiler, signature->arity, fullSignature, size);
     emitOp(&fnCompiler, OP_RETURN);
+    Signature fn = {"weele", 5, SIG_FUNCTION, signature->arity};
+    signatureToString(&fn, fullSignature, &size);
     endCompiler(&fnCompiler, fullSignature, size);
     // define weele function on the class
    
