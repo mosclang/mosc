@@ -1,0 +1,15 @@
+kulu Class {
+    nin a
+    dilan kura(ale.a);
+    dilan kura1(ale.a) => gansan
+    test() {
+        A.yira(ale.a)
+    }
+}
+
+nin class = Class.kura("Hi")
+
+class.test() # expect: Hi
+
+class = Class.kura1("Hi")
+A.yira(class.a) # expect: Hi

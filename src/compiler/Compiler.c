@@ -1765,11 +1765,7 @@ static bool finishBlock(Compiler *compiler, bool expr) {
     return expr && isExpr;
 }
 
-// Parses a method or function body, after the initial "{" has been consumed.
-//
-// If [Compiler->isInitializer] is `true`, this is the body of a constructor
-// initializer. In that case, this adds the code to ensure it returns `this`.
-static void finishBody(Compiler *compiler) {
+void emitImplicitConstructorAssignations(Compiler* compiler) {
     if(compiler->isInitializer && compiler->constructorsAssignments != NULL) {
         // emit code to initiate field declared in constructor
         ClassInfo *enclosingClass = getEnclosingClass(compiler);
@@ -1786,6 +1782,14 @@ static void finishBody(Compiler *compiler) {
         free(compiler->constructorsAssignments);
         compiler->constructorsAssignments = NULL;
     }
+}
+
+// Parses a method or function body, after the initial "{" has been consumed.
+//
+// If [Compiler->isInitializer] is `true`, this is the body of a constructor
+// initializer. In that case, this adds the code to ensure it returns `this`.
+static void finishBody(Compiler *compiler) {
+    emitImplicitConstructorAssignations(compiler);
     bool isExpressionBody = finishBlock(compiler, false);
 
     if (compiler->isInitializer) {
@@ -1802,6 +1806,7 @@ static void finishBody(Compiler *compiler) {
     emitOp(compiler, OP_RETURN);
 }
 static void finishExpressionBody(Compiler *compiler) {
+    emitImplicitConstructorAssignations(compiler);
     expression(compiler);
 
     if (compiler->isInitializer) {
@@ -3727,7 +3732,8 @@ static bool method(Compiler *compiler, Variable *classVariable, bool isStatic, b
         if (match(compiler, ARROW_TOKEN)) {
             finishExpressionBody(&methodCompiler);
         } else if(signature.type == SIG_INITIALIZER && (match(compiler, SEMI_TOKEN) || peek(compiler) == EOL_TOKEN)) {
-            // Aallow semin after constructor or eol to mark the end of the body
+            // Allow semi after constructor or eol to mark the end of the body
+            emitImplicitConstructorAssignations(&methodCompiler);
             emitOp(&methodCompiler, OP_LOAD_LOCAL_0);
             emitOp(&methodCompiler, OP_RETURN);
         } else {
