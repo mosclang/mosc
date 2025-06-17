@@ -2,7 +2,11 @@ kulu Person {
     nin type
     nin from
     dilan kura(t, f) {
-        ale.type = t
+        ale.type = nii(t) {
+            t
+        } note {
+            ""
+        }
         ale.from = f
     }
 }

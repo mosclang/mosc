@@ -4,3 +4,6 @@ cmake-*/
 bin/
 dump.txt
 build/
+node_modules/
+try/runner/public/*mosc*
+package-lock.json

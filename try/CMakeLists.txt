@@ -3,18 +3,16 @@ project(mosc_try)
 
 set(CMAKE_C_STANDARD 99)
 
-if (NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-endif ()
+
 
 set(MSC_DEPS)
-set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-Os -g")
 
-set(CMAKE_C_FLAGS "-Wall -Wextra")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 set(CMAKE_C_FLAGS_MINSIZEREL "-Os")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-Os -g")
@@ -40,6 +38,6 @@ add_executable(mosc-try ${SOURCE_FILES})
 
 set_target_properties(mosc-try
         PROPERTIES SUFFIX ".html"
-        LINK_FLAGS " -s WASM=1 -s FILESYSTEM=0 -s EXIT_RUNTIME=0 -s ENVIRONMENT='web' -s EXPORTED_FUNCTIONS=\"['_main', '_mosc_compile']\" -s EXTRA_EXPORTED_RUNTIME_METHODS=\"['ccall', 'cwrap']\"")
+        LINK_FLAGS " -g4 -s STACK_SIZE=512000 -s WASM=1 -s FILESYSTEM=0 -s EXIT_RUNTIME=0 -s ENVIRONMENT='web' -s EXPORTED_FUNCTIONS=\"['_main', '_mosc_compile']\" -s EXTRA_EXPORTED_RUNTIME_METHODS=\"['ccall', 'cwrap']\"")
 
 target_link_libraries(mosc-try mosc)
